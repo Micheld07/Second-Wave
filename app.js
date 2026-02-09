@@ -28,9 +28,20 @@ window.signup = async function(){
 window.login = async function(){
   const email = val('email');
   const password = val('password');
+
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if(error){ authStatus.innerText = error.message; return; }
-  window.setUser(data.user);
+  if(error){
+    authStatus.innerText = error.message;
+    return;
+  }
+
+  const user = data.user ?? data.session?.user;
+  if(!user){
+    authStatus.innerText = 'Login fehlgeschlagen';
+    return;
+  }
+
+  setUser(user);
 };
 
 window.logout = async function(){
@@ -52,7 +63,7 @@ window.setUser = function(user){
 
 // Auth-State Listener
 supabase.auth.onAuthStateChange((_, session)=>{
-  if(session?.user) window.setUser(session.user);
+  if(session?.user) setUser(session.user);
 });
 
 // ================= MENU =================
@@ -134,9 +145,9 @@ document.getElementById('add-song-btn').onclick = async ()=>{
   const link = val('song-link');
   if(!name || !duration) return alert('Songname & Dauer eingeben!');
 
-  // Prüfen auf Duplikat
-  const { data: exists } = await supabase.from('songs').select('*').eq('name', name);
-  if(exists.length>0){ alert('Song existiert bereits!'); return; }
+  // Dopplungen prüfen
+  const { data: existing } = await supabase.from('songs').select('*').eq('name', name);
+  if(existing.length>0) return alert('Song existiert bereits in der Bibliothek');
 
   await supabase.from('songs').insert({ name, duration, link });
   document.getElementById('song-name').value='';
@@ -145,7 +156,7 @@ document.getElementById('add-song-btn').onclick = async ()=>{
   openLibrary();
 };
 
-// ================= SONG-BIBLIOTHEK =================
+// ================= SONG BIBLIOTHEK =================
 document.getElementById('open-library-btn').onclick = openLibrary;
 
 async function openLibrary(){
@@ -185,7 +196,7 @@ window.assignSong = async (song_id)=>{
       const { data: setlist } = await supabase.from('setlists').select('id').eq('gig_id', gig_id).single();
       const { data: exists } = await supabase.from('setlist_songs').select('*').eq('setlist_id', setlist.id).eq('song_id', song_id);
       if(exists.length===0){
-        const pos = document.querySelectorAll(`#setlist li`).length+1;
+        const pos = document.querySelectorAll('#setlist li').length + 1;
         await supabase.from('setlist_songs').insert({ setlist_id: setlist.id, song_id, position: pos });
       }
     }
@@ -290,4 +301,3 @@ async function loadAll(){
   await loadCash();
   await renderMerch();
 }
-
