@@ -12,22 +12,22 @@ let currentGig = null;
 // ================= ELEMENTS =================
 const authStatus = document.getElementById('auth-status');
 const authSection = document.getElementById('auth-section');
-const mainContent = document.getElementById('main');
+const mainContent = document.getElementById('main-content');
 
 // ================= HELPER =================
 function val(id){ return document.getElementById(id).value; }
 
 // ================= AUTH =================
 window.signup = async function(){
-  const email = val('emailInput');
-  const password = val('passwordInput');
+  const email = val('email');
+  const password = val('password');
   const { error } = await supabase.auth.signUp({ email, password });
   authStatus.innerText = error ? error.message : 'Registrierung erfolgreich – E-Mail bestätigen!';
 };
 
 window.login = async function(){
-  const email = val('emailInput');
-  const password = val('passwordInput');
+  const email = val('email');
+  const password = val('password');
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if(error){ authStatus.innerText = error.message; return; }
   window.setUser(data.user);
@@ -56,15 +56,21 @@ supabase.auth.onAuthStateChange((_, session)=>{
 });
 
 // ================= MENU =================
-window.toggleSection = id => document.getElementById(id).classList.toggle('hidden');
-window.closeSection = id => document.getElementById(id).classList.add('hidden');
-window.closeLibrary = () => document.getElementById('song-library').classList.add('hidden');
+window.toggleSection = id => {
+  document.getElementById(id).classList.toggle('hidden');
+};
+window.closeSection = id => {
+  document.getElementById(id).classList.add('hidden');
+};
+window.closeLibrary = () => {
+  document.getElementById('song-library').classList.add('hidden');
+};
 
 // ================= GIGS =================
 document.getElementById('add-gig-btn').onclick = async () => {
-  const name = val('gigName');
-  const date = val('gigDate');
-  const notes = val('gigNotes');
+  const name = val('gig-name');
+  const date = val('gig-date');
+  const notes = val('gig-notes');
   if(!name || !date) return alert('Name & Datum eingeben!');
 
   const { data: gig } = await supabase.from('gigs').insert({ name, date, notes }).select().single();
@@ -74,7 +80,7 @@ document.getElementById('add-gig-btn').onclick = async () => {
 
 async function loadGigs(){
   const { data } = await supabase.from('gigs').select('*').order('date');
-  const gigsList = document.getElementById('gigsList');
+  const gigsList = document.getElementById('gigs-list');
   gigsList.innerHTML = '';
   data.forEach(g=>{
     const li = document.createElement('li');
@@ -86,8 +92,9 @@ async function loadGigs(){
 
 async function openGig(gig){
   currentGig = gig;
-  toggleSection('gigDetail');
-  document.getElementById('gigTitle').textContent = `${gig.name} (${gig.date})`;
+  toggleSection('gig-detail-section');
+  document.getElementById('gig-title').textContent = `${gig.name} (${gig.date})`;
+  document.getElementById('gig-notes-view').textContent = gig.notes || '';
   loadSetlist();
 }
 
@@ -114,7 +121,7 @@ async function addSongToSetlist(song_id){
   if(!currentGig) return;
   const { data: setlist } = await supabase.from('setlists').select('id').eq('gig_id', currentGig.id).single();
   const existing = await supabase.from('setlist_songs').select('*').eq('setlist_id', setlist.id).eq('song_id', song_id);
-  if(existing.data.length>0) return;
+  if(existing.data.length>0) return; // keine Duplikate
   const pos = document.querySelectorAll('#setlist li').length + 1;
   await supabase.from('setlist_songs').insert({ setlist_id: setlist.id, song_id, position: pos });
   loadSetlist();
@@ -122,19 +129,19 @@ async function addSongToSetlist(song_id){
 
 // ================= SONGS =================
 document.getElementById('add-song-btn').onclick = async ()=>{
-  const name = val('songName');
-  const duration = val('songDuration');
-  const link = val('songLink');
+  const name = val('song-name');
+  const duration = val('song-duration');
+  const link = val('song-link');
   if(!name || !duration) return alert('Songname & Dauer eingeben!');
 
-  // Prüfen auf Duplikate in Bibliothek
+  // Prüfen auf Duplikat
   const { data: exists } = await supabase.from('songs').select('*').eq('name', name);
-  if(exists.length>0) return alert('Song existiert bereits in der Bibliothek!');
+  if(exists.length>0){ alert('Song existiert bereits!'); return; }
 
   await supabase.from('songs').insert({ name, duration, link });
-  document.getElementById('songName').value='';
-  document.getElementById('songDuration').value='';
-  document.getElementById('songLink').value='';
+  document.getElementById('song-name').value='';
+  document.getElementById('song-duration').value='';
+  document.getElementById('song-link').value='';
   openLibrary();
 };
 
@@ -178,7 +185,7 @@ window.assignSong = async (song_id)=>{
       const { data: setlist } = await supabase.from('setlists').select('id').eq('gig_id', gig_id).single();
       const { data: exists } = await supabase.from('setlist_songs').select('*').eq('setlist_id', setlist.id).eq('song_id', song_id);
       if(exists.length===0){
-        const pos = exists.length + 1;
+        const pos = document.querySelectorAll(`#setlist li`).length+1;
         await supabase.from('setlist_songs').insert({ setlist_id: setlist.id, song_id, position: pos });
       }
     }

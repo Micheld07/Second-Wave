@@ -1,104 +1,132 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Second Wave 🎸</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Second Wave 🎸</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1>Second Wave 🎸</h1>
+  <h1>Second Wave 🎸</h1>
 
-<!-- LOGIN / AUTH -->
-<section id="auth-section">
-  <h2>🔑 Login / Registrierung</h2>
-  <div class="input-group">
-    <input id="email" type="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Passwort">
-    <button onclick="login()">Login</button>
-    <button onclick="signup()">Registrieren</button>
-  </div>
-  <p id="auth-status"></p>
-</section>
+  <!-- ================= LOGIN / AUTH ================= -->
+  <section id="auth-section">
+    <h2>🔑 Login / Registrierung</h2>
+    <div class="input-group">
+      <input id="email" type="email" placeholder="Email">
+      <input id="password" type="password" placeholder="Passwort">
+      <button onclick="login()">Login</button>
+      <button onclick="signup()">Registrieren</button>
+    </div>
+    <p id="auth-status"></p>
+  </section>
 
-<!-- MAIN CONTENT -->
-<div id="main-content" class="hidden">
+  <!-- ================= MAIN CONTENT ================= -->
+  <div id="main-content" class="hidden">
 
-  <!-- Gigs -->
-  <section>
-    <h2 onclick="toggleSection('gigs-section')">📅 Auftritte & Proben</h2>
-    <div id="gigs-section">
-      <div class="input-group">
-        <input id="gig-name" placeholder="Name">
-        <input id="gig-date" type="date">
-        <textarea id="gig-notes" placeholder="Notizen"></textarea>
-        <button id="add-gig-btn">➕ Hinzufügen</button>
+    <!-- ================= GIGS ================= -->
+    <section>
+      <h2>
+        📅 Auftritte & Proben
+        <button onclick="toggleSection('gig-input')">Öffnen/Schließen</button>
+      </h2>
+      <div id="gig-input" class="hidden">
+        <div class="input-group">
+          <input id="gig-name" placeholder="Name">
+          <input id="gig-date" type="date">
+          <textarea id="gig-notes" placeholder="Notizen"></textarea>
+          <button id="add-gig-btn">➕ Hinzufügen</button>
+        </div>
       </div>
       <ul id="gigs-list"></ul>
-    </div>
-  </section>
+    </section>
 
-  <!-- Gig Detail & Setlist -->
-  <section id="gig-detail-section" class="hidden">
-    <h2 id="gig-title"></h2>
-    <p id="gig-notes-view"></p>
-    <h3>🎵 Setlist</h3>
-    <div class="input-group">
-      <input id="song-name" placeholder="Song-Name">
-      <input id="song-duration" placeholder="mm:ss">
-      <input id="song-link" placeholder="YouTube-Link">
-      <button id="add-song-btn">➕ Vorschlagen</button>
-      <button id="open-library-btn">📚 Bibliothek öffnen</button>
-    </div>
-    <ul id="setlist"></ul>
-    <p>Gesamtdauer: <span id="total-time">00:00</span></p>
-  </section>
+    <!-- ================= GIG DETAIL & SETLIST ================= -->
+    <section id="gig-detail-section" class="hidden">
+      <h2 id="gig-title"></h2>
+      <p id="gig-notes-view"></p>
 
-  <!-- Songbibliothek Overlay -->
-  <div id="song-library" class="hidden">
-    <h2>🎶 Songbibliothek</h2>
-    <button onclick="closeLibrary()">Schließen</button>
-    <ul id="library-list"></ul>
+      <h3>
+        🎵 Setlist
+        <button onclick="toggleSection('setlist-container')">Öffnen/Schließen</button>
+      </h3>
+      <div id="setlist-container" class="hidden">
+        <ul id="setlist" ondrop="drop(event)" ondragover="allowDrop(event)"></ul>
+        <p>Gesamtdauer: <span id="total-time">00:00</span></p>
+      </div>
+    </section>
+
+    <!-- ================= SONGS ================= -->
+    <section>
+      <h2>
+        🎶 Songs vorschlagen
+        <button onclick="toggleSection('song-input')">Öffnen/Schließen</button>
+      </h2>
+      <div id="song-input" class="hidden">
+        <div class="input-group">
+          <input id="song-name" placeholder="Song-Name">
+          <input id="song-duration" placeholder="mm:ss">
+          <input id="song-link" placeholder="YouTube-Link">
+          <button id="add-song-btn">➕ Vorschlagen</button>
+        </div>
+      </div>
+      <button id="open-library-btn">🎵 Songbibliothek öffnen</button>
+    </section>
+
+    <!-- ================= SONG BIBLIOTHEK ================= -->
+    <div id="song-library" class="hidden">
+      <h3>Songbibliothek</h3>
+      <ul id="library-list"></ul>
+      <button onclick="closeLibrary()">Schließen</button>
+    </div>
+
+    <!-- ================= TECH-RIDER ================= -->
+    <section>
+      <h2>
+        🎛️ Tech-Rider
+        <button onclick="toggleSection('techrider-section')">Öffnen/Schließen</button>
+      </h2>
+      <div id="techrider-section" class="hidden">
+        <div class="input-group">
+          <input type="file" id="techrider-file" accept=".pdf">
+          <button id="upload-techrider-btn">Upload PDF</button>
+        </div>
+        <p><a id="techrider-link" href="#" target="_blank" class="hidden">📄 Gespeicherten Tech-Rider öffnen</a></p>
+      </div>
+    </section>
+
+    <!-- ================= BANDKASSE ================= -->
+    <section>
+      <h2>
+        💰 Bandkasse
+        <button onclick="toggleSection('cash-section')">Öffnen/Schließen</button>
+      </h2>
+      <div id="cash-section" class="hidden">
+        <div class="input-group">
+          <input id="cash-amount" type="number" step="0.01" placeholder="Neuer Betrag (€)">
+          <button id="cash-btn">Aktualisieren</button>
+        </div>
+        <p>Aktuell: <span id="current-cash">0.00 €</span></p>
+      </div>
+    </section>
+
+    <!-- ================= MERCH ================= -->
+    <section>
+      <h2>
+        👕 Merch Lager
+        <button onclick="toggleSection('merch-section')">Öffnen/Schließen</button>
+      </h2>
+      <div id="merch-section" class="hidden">
+        <div class="merch-grid" id="merch-grid"></div>
+        <p>
+          <a href="https://share.google/lJVJCeUQLYGjKOOFu" target="_blank">🛒 Merch nachbestellen</a>
+        </p>
+      </div>
+    </section>
+
   </div>
 
-  <!-- Tech-Rider -->
-  <section>
-    <h2 onclick="toggleSection('techrider-section')">🎛️ Tech-Rider</h2>
-    <div id="techrider-section" class="hidden">
-      <div class="input-group">
-        <input type="file" id="techrider-file" accept=".pdf">
-        <button id="upload-techrider-btn">Upload PDF</button>
-      </div>
-      <p>
-        <a id="techrider-link" href="#" target="_blank" class="hidden">📄 Gespeicherten Tech-Rider öffnen</a>
-      </p>
-    </div>
-  </section>
-
-  <!-- Bandkasse -->
-  <section>
-    <h2 onclick="toggleSection('cash-section')">💰 Bandkasse</h2>
-    <div id="cash-section" class="hidden">
-      <div class="input-group">
-        <input id="cash-amount" type="number" step="0.01" placeholder="Neuer Betrag (€)">
-        <button id="cash-btn">Aktualisieren</button>
-      </div>
-      <p>Aktuell: <span id="current-cash">0.00 €</span></p>
-    </div>
-  </section>
-
-  <!-- Merch Lager -->
-  <section>
-    <h2 onclick="toggleSection('merch-section')">👕 Merch Lager</h2>
-    <div id="merch-section" class="hidden">
-      <div class="merch-grid" id="merch-grid"></div>
-      <p><a href="https://share.google/lJVJCeUQLYGjKOOFu" target="_blank">🛒 Merch nachbestellen</a></p>
-    </div>
-  </section>
-
-</div>
-
-<script type="module" src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
