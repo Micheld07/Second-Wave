@@ -28,9 +28,27 @@ window.signup = async function(){
 window.login = async function(){
   const email = val('email');
   const password = val('password');
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if(error){ authStatus.innerText = error.message; return; }
-  window.setUser(data.user);
+  authStatus.innerText = "Login wird geprüft...";
+  
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if(error) { 
+      authStatus.innerText = error.message; 
+      return; 
+    }
+    if(!data.user) { 
+      authStatus.innerText = "Login fehlgeschlagen"; 
+      return; 
+    }
+    // Login erfolgreich
+    currentUser = data.user;
+    authSection.classList.add('hidden');
+    mainContent.classList.remove('hidden');
+    loadAll();
+  } catch(err) {
+    console.error(err);
+    authStatus.innerText = "Fehler beim Login";
+  }
 };
 
 window.logout = async function(){
@@ -41,27 +59,25 @@ window.logout = async function(){
   mainContent.classList.add('hidden');
 };
 
-window.setUser = function(user){
-  currentUser = user;
-  authSection.classList.add('hidden');
-  mainContent.classList.remove('hidden');
-  loadAll();
-};
-
-supabase.auth.onAuthStateChange((_, session)=>{ if(session?.user) window.setUser(session.user); });
+// ================= AUTH STATE LISTENER =================
+supabase.auth.onAuthStateChange((_, session)=>{
+  if(session?.user && !currentUser){
+    currentUser = session.user;
+    authSection.classList.add('hidden');
+    mainContent.classList.remove('hidden');
+    loadAll();
+  }
+});
 
 // ================= SECTIONS =================
-// alle Bereiche auf-/zuklappbar
 document.querySelectorAll('.section').forEach(section=>{
   section.addEventListener('click', e=>{
-    // auf-/zuklappen nur, wenn auf header oder section selbst geklickt
     if(e.target.classList.contains('section-header') || e.currentTarget===e.target){
       const content = section.querySelector('.section-content');
-      if(content.style.display==='block'){
-        content.style.display='none';
-      } else {
+      if(content.style.display==='block') content.style.display='none';
+      else{
         content.style.display='block';
-        // spezielle Aktionen beim Öffnen
+        // beim Öffnen spezielle Aktionen
         if(section.id==='songs-section') loadLibrary();
         if(section.id==='merch-section') renderMerch();
       }
@@ -227,9 +243,12 @@ el('upload-techrider-btn').onclick = async ()=>{
 
 // ================= MERCH =================
 const merchItems = [
-  { key:'schwarz-s', label:'Schwarz S' }, { key:'schwarz-m', label:'Schwarz M' }, { key:'schwarz-l', label:'Schwarz L' }, { key:'schwarz-xl', label:'Schwarz XL' }, { key:'schwarz-xxl', label:'Schwarz XXL' },
-  { key:'weiß-s', label:'Weiß S' }, { key:'weiß-m', label:'Weiß M' }, { key:'weiß-l', label:'Weiß L' }, { key:'weiß-xl', label:'Weiß XL' }, { key:'weiß-xxl', label:'Weiß XXL' },
-  { key:'blau-s', label:'Blau S' }, { key:'blau-m', label:'Blau M' }, { key:'blau-l', label:'Blau L' }, { key:'blau-xl', label:'Blau XL' }, { key:'blau-xxl', label:'Blau XXL' },
+  { key:'schwarz-s', label:'Schwarz S' }, { key:'schwarz-m', label:'Schwarz M' }, { key:'schwarz-l', label:'Schwarz L' },
+  { key:'schwarz-xl', label:'Schwarz XL' }, { key:'schwarz-xxl', label:'Schwarz XXL' },
+  { key:'weiß-s', label:'Weiß S' }, { key:'weiß-m', label:'Weiß M' }, { key:'weiß-l', label:'Weiß L' },
+  { key:'weiß-xl', label:'Weiß XL' }, { key:'weiß-xxl', label:'Weiß XXL' },
+  { key:'blau-s', label:'Blau S' }, { key:'blau-m', label:'Blau M' }, { key:'blau-l', label:'Blau L' },
+  { key:'blau-xl', label:'Blau XL' }, { key:'blau-xxl', label:'Blau XXL' },
   { key:'anhänger', label:'Anhänger' }, { key:'öffner', label:'Öffner' }
 ];
 
@@ -259,5 +278,4 @@ async function loadAll(){
   await loadGigs();
   await loadLibrary();
   await loadCash();
-  // Merch wird beim Öffnen geladen, nicht hier
 }
