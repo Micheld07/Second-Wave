@@ -33,7 +33,7 @@ window.login = async function(){
     authStatus.innerText = error.message;
     return;
   }
-  window.setUser(data.user);
+  setUser(data.user);
 };
 
 window.logout = async function(){
@@ -45,17 +45,17 @@ window.logout = async function(){
   authStatus.innerText = 'Abgemeldet';
 };
 
-window.setUser = function(user){
+function setUser(user){
   currentUser = user;
   authSection.classList.add('hidden');
   mainContent.classList.remove('hidden');
   authStatus.innerText = `Eingeloggt als ${user.email}`;
   loadAll();
-};
+}
 
 // Auth-State Listener
 supabase.auth.onAuthStateChange((_, session)=>{
-  if(session?.user) window.setUser(session.user);
+  if(session?.user) setUser(session.user);
 });
 
 // ================= GIGS =================
@@ -88,12 +88,7 @@ async function openGig(gig){
   const title = document.createElement('h3');
   title.id = 'gig-title';
   title.textContent = `${gig.name} (${gig.date})`;
-  document.getElementById('gigs-section').appendChild(title);
-  document.getElementById('gig-notes-view')?.remove();
-  const notes = document.createElement('p');
-  notes.id = 'gig-notes-view';
-  notes.textContent = gig.notes || '';
-  document.getElementById('gigs-section').appendChild(notes);
+  document.querySelector('#main-content').prepend(title);
   loadSetlist();
 }
 
@@ -109,7 +104,10 @@ async function loadSetlist(){
     const li = document.createElement('li');
     li.draggable = true;
     li.dataset.song = row.songs.id;
-    li.innerHTML = `${row.songs.name} (${row.songs.duration}) ${voteButtons(row.songs.id)}`;
+    li.innerHTML = `
+      <a href="${row.songs.link || '#'}" target="_blank">${row.songs.name}</a> (${row.songs.duration})
+      ${voteButtons(row.songs.id)}
+    `;
     li.ondragstart = drag;
     setlistEl.appendChild(li);
   });
@@ -133,9 +131,8 @@ document.getElementById('add-song-btn').onclick = async ()=>{
   const link = val('song-link');
   if(!name || !duration) return alert('Songname & Dauer eingeben!');
 
-  // Duplikatsprüfung
-  const { data: existing } = await supabase.from('songs').select('*').eq('name', name);
-  if(existing.length>0) return alert('Song existiert bereits in der Bibliothek!');
+  const { data: exists } = await supabase.from('songs').select('*').eq('name', name);
+  if(exists.length>0) return alert('Song existiert bereits!');
 
   await supabase.from('songs').insert({ name, duration, link });
   document.getElementById('song-name').value='';
@@ -158,8 +155,10 @@ function renderLibrary(songs){
   libraryList.innerHTML = '';
   songs.forEach(song=>{
     const li = document.createElement('li');
-    li.innerHTML = `<a href="${song.link}" target="_blank">${song.name} (${song.duration})</a>
-      <button onclick="assignSong(${song.id})">🎵 Setlists zuordnen</button>`;
+    li.innerHTML = `
+      <a href="${song.link || '#'}" target="_blank">${song.name} (${song.duration})</a>
+      <button onclick="assignSong(${song.id})">🎵 Setlists zuordnen</button>
+    `;
     libraryList.appendChild(li);
   });
 }
@@ -168,10 +167,12 @@ window.assignSong = async (song_id)=>{
   const { data: gigs } = await supabase.from('gigs').select('*').order('date');
   const gigOptions = gigs.map(g=>`<option value="${g.id}">${g.name} (${g.date})</option>`).join('');
   const div = document.createElement('div');
-  div.innerHTML = `<h3>Song zu Setlists zuordnen</h3>
+  div.innerHTML = `
+    <h3>Song zu Setlists zuordnen</h3>
     <select id="assign-gig" multiple>${gigOptions}</select>
     <button id="assign-ok">OK</button>
-    <button onclick="document.body.removeChild(this.parentNode)">Abbrechen</button>`;
+    <button onclick="document.body.removeChild(this.parentNode)">Abbrechen</button>
+  `;
   document.body.appendChild(div);
   document.getElementById('assign-ok').onclick = async ()=>{
     const select = document.getElementById('assign-gig');
@@ -191,8 +192,8 @@ window.assignSong = async (song_id)=>{
 
 // ================= VOTING =================
 function voteButtons(song_id){
-  const colors = ['vote-1','vote-2','vote-3','vote-4','vote-5'];
-  return [1,2,3,4,5].map((v,i)=>`<button class="${colors[i]}" onclick="vote(${song_id},${v})">${v}</button>`).join(' ');
+  const colors = ['#ff4d4d','#ff944d','#ffdb4d','#94ff4d','#4dff88'];
+  return [1,2,3,4,5].map((v,i)=>`<button class="vote-btn" style="background:${colors[i]}" onclick="vote(${song_id},${v})">${v}</button>`).join(' ');
 }
 
 window.vote = async (song_id,value)=>{
