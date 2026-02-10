@@ -110,11 +110,11 @@ li button:hover {
 }
 
 /* Voting-Farben */
-.vote-1 { background: #ff4d4d; }
-.vote-2 { background: #ff944d; }
-.vote-3 { background: #ffdb4d; }
-.vote-4 { background: #94ff4d; }
-.vote-5 { background: #4dff88; }
+.vote-1 { background: #a8150a; }
+.vote-2 { background: #71a80a; }
+.vote-3 { background: #71a80a; }
+.vote-4 { background: #71a80a; }
+.vote-5 { background: #22a80a; }
 
 /* ================= MERCH GRID ================= */
 .merch-grid {
