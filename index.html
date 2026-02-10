@@ -19,9 +19,7 @@
 </section>
 
 <!-- ================= MAIN CONTENT ================= -->
-<div id="main-content">
-
-  <button onclick="logout()">Abmelden</button>
+<div id="main-content" class="hidden">
 
   <!-- ================= GIGS ================= -->
   <section class="section">
@@ -32,6 +30,14 @@
       <textarea id="gig-notes" placeholder="Notizen"></textarea>
       <button id="add-gig-btn">➕ Hinzufügen</button>
       <ul id="gigs-list"></ul>
+
+      <!-- Setlist wird nur beim Klick auf Gig angezeigt -->
+      <div id="gig-detail-section" class="hidden">
+        <h3 id="gig-title">Setlist</h3>
+        <p id="gig-notes-view"></p>
+        <ul id="setlist"></ul>
+        <p>Gesamtdauer: <span id="total-time">00:00</span></p>
+      </div>
     </div>
   </section>
 
@@ -44,21 +50,8 @@
       <input id="song-link" placeholder="YouTube-Link">
       <button id="add-song-btn">➕ Vorschlagen</button>
 
-      <!-- Song-Bibliothek -->
       <input type="text" id="song-search" placeholder="Suche Song...">
       <ul id="library-list"></ul>
-    </div>
-  </section>
-
-  <!-- ================= GIG DETAIL & SETLIST ================= -->
-  <section class="section" id="gig-detail-section">
-    <div class="section-header" onclick="toggleSection('gig-detail-content')">
-      <span id="gig-title">Gig Detail</span>
-    </div>
-    <div class="section-content" id="gig-detail-content">
-      <p id="gig-notes-view"></p>
-      <ul id="setlist"></ul>
-      <p>Gesamtdauer: <span id="total-time">00:00</span></p>
     </div>
   </section>
 
@@ -87,8 +80,14 @@
     <div class="section-header" onclick="toggleSection('merch-content')">👕 Merch Lager</div>
     <div class="section-content" id="merch-content">
       <div id="merch-grid"></div>
+      <p><a href="https://share.google/lJVJCeUQLYGjKOOFu" target="_blank">🛒 Merch nachbestellen</a></p>
     </div>
   </section>
+
+  <!-- ================= LOGOUT ================= -->
+  <div class="logout-section">
+    <button onclick="logout()">Abmelden</button>
+  </div>
 
 </div>
 

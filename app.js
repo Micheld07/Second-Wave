@@ -5,7 +5,7 @@ const supabaseUrl = 'https://ugwkwxhqbkptuzexutve.supabase.co';
 const supabaseKey = 'sb_publishable_gyeVcsXZrq0yz3IS1C79QQ_H0K0g-9a';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// ================= GLOBALS =================
+// ================= GLOBAL =================
 let currentUser = null;
 let currentGig = null;
 
@@ -16,6 +16,7 @@ const mainContent = document.getElementById('main-content');
 
 // ================= HELPER =================
 function val(id){ return document.getElementById(id).value; }
+function el(id){ return document.getElementById(id); }
 
 // ================= AUTH =================
 window.signup = async function(){
@@ -29,10 +30,7 @@ window.login = async function(){
   const email = val('email');
   const password = val('password');
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if(error){
-    authStatus.innerText = error.message;
-    return;
-  }
+  if(error){ authStatus.innerText = error.message; return; }
   window.setUser(data.user);
 };
 
@@ -40,29 +38,24 @@ window.logout = async function(){
   await supabase.auth.signOut();
   currentUser = null;
   currentGig = null;
-  authSection.style.display = 'block';
-  mainContent.style.display = 'none';
-  authStatus.innerText = 'Abgemeldet';
+  authSection.classList.remove('hidden');
+  mainContent.classList.add('hidden');
 };
 
 window.setUser = function(user){
   currentUser = user;
-  authSection.style.display = 'none';
-  mainContent.style.display = 'block';
-  authStatus.innerText = `Eingeloggt als ${user.email}`;
+  authSection.classList.add('hidden');
+  mainContent.classList.remove('hidden');
   loadAll();
 };
 
-// Auth-State Listener
-supabase.auth.onAuthStateChange((_, session)=>{
-  if(session?.user) window.setUser(session.user);
-});
+// Auth State Listener
+supabase.auth.onAuthStateChange((_, session)=>{ if(session?.user) window.setUser(session.user); });
 
-// ================= MENU =================
+// ================= SECTION TOGGLE =================
 window.toggleSection = id => {
-  const el = document.getElementById(id);
-  if(el.style.display === 'none') el.style.display = 'block';
-  else el.style.display = 'none';
+  const sec = el(id);
+  sec.style.display = (sec.style.display === 'block') ? 'none' : 'block';
 };
 
 // ================= GIGS =================
@@ -78,21 +71,20 @@ document.getElementById('add-gig-btn').onclick = async () => {
 
 async function loadGigs(){
   const { data } = await supabase.from('gigs').select('*').order('date');
-  const gigsList = document.getElementById('gigs-list');
-  gigsList.innerHTML = '';
+  const list = el('gigs-list'); list.innerHTML = '';
   data.forEach(g=>{
     const li = document.createElement('li');
     li.textContent = `${g.date} – ${g.name}`;
     li.onclick = ()=> openGig(g);
-    gigsList.appendChild(li);
+    list.appendChild(li);
   });
 }
 
 async function openGig(gig){
   currentGig = gig;
-  toggleSection('gig-detail-section');
-  document.getElementById('gig-title').textContent = `${gig.name} (${gig.date})`;
-  document.getElementById('gig-notes-view').textContent = gig.notes || '';
+  el('gig-detail-section').classList.remove('hidden');
+  el('gig-title').textContent = `${gig.name} (${gig.date})`;
+  el('gig-notes-view').textContent = gig.notes || '';
   loadSetlist();
 }
 
@@ -101,8 +93,7 @@ async function loadSetlist(){
   if(!currentGig) return;
   const { data: setlist } = await supabase.from('setlists').select('id').eq('gig_id', currentGig.id).single();
   const { data } = await supabase.from('setlist_songs').select('position,songs(*)').eq('setlist_id', setlist.id).order('position');
-  const setlistEl = document.getElementById('setlist');
-  setlistEl.innerHTML = '';
+  const setlistEl = el('setlist'); setlistEl.innerHTML = '';
   data.forEach(row=>{
     const li = document.createElement('li');
     li.draggable = true;
@@ -130,45 +121,51 @@ document.getElementById('add-song-btn').onclick = async ()=>{
   const duration = val('song-duration');
   const link = val('song-link');
   if(!name || !duration) return alert('Songname & Dauer eingeben!');
+  // keine Duplikate in Library
+  const { data: exists } = await supabase.from('songs').select('*').eq('name', name).eq('duration', duration);
+  if(exists.length>0) return alert('Song bereits vorhanden!');
   await supabase.from('songs').insert({ name, duration, link });
-  document.getElementById('song-name').value='';
-  document.getElementById('song-duration').value='';
-  document.getElementById('song-link').value='';
+  el('song-name').value=''; el('song-duration').value=''; el('song-link').value='';
   openLibrary();
 };
 
 // ================= SONG-BIBLIOTHEK =================
-document.getElementById('open-library-btn').onclick = openLibrary;
+document.getElementById('open-library-btn')?.addEventListener('click', openLibrary);
 
 async function openLibrary(){
-  document.getElementById('library-list').classList.remove('hidden');
   const { data } = await supabase.from('songs').select('*');
   renderLibrary(data);
 }
 
 function renderLibrary(songs){
-  const libraryList = document.getElementById('library-list');
-  libraryList.innerHTML = '';
-  songs.forEach(song=>{
+  const list = el('library-list'); list.innerHTML='';
+  const search = el('song-search')?.value.toLowerCase() || '';
+  songs.filter(s=>s.name.toLowerCase().includes(search)).forEach(song=>{
     const li = document.createElement('li');
-    li.innerHTML = `<a href="${song.link||'#'}" target="_blank">${song.name} (${song.duration})</a>
-    <button onclick="assignSong(${song.id})">🎵 Setlists zuordnen</button>`;
-    libraryList.appendChild(li);
+    li.innerHTML = `
+      ${song.name} (${song.duration}) 
+      <button onclick="assignSong(${song.id})">🎵 Zu Setlists</button>
+    `;
+    list.appendChild(li);
   });
 }
+el('song-search')?.addEventListener('input', openLibrary);
 
 window.assignSong = async (song_id)=>{
   const { data: gigs } = await supabase.from('gigs').select('*').order('date');
   const gigOptions = gigs.map(g=>`<option value="${g.id}">${g.name} (${g.date})</option>`).join('');
   const div = document.createElement('div');
-  div.style.position='fixed'; div.style.top='20%'; div.style.left='30%'; div.style.background='#333'; div.style.color='#fff'; div.style.padding='15px'; div.style.borderRadius='8px'; div.style.zIndex='999';
-  div.innerHTML = `<h3>Song zu Setlists zuordnen</h3>
-    <select id="assign-gig" multiple style="width:100%">${gigOptions}</select>
-    <div style="margin-top:10px;"><button id="assign-ok">OK</button> <button onclick="document.body.removeChild(this.parentNode)">Abbrechen</button></div>`;
+  div.style.position='fixed'; div.style.top='20%'; div.style.left='50%'; div.style.transform='translateX(-50%)';
+  div.style.background='#2c3e50'; div.style.padding='15px'; div.style.borderRadius='12px'; div.style.zIndex='999';
+  div.innerHTML = `
+    <h3>Song zu Setlists zuordnen</h3>
+    <select id="assign-gig" multiple>${gigOptions}</select>
+    <br><button id="assign-ok">OK</button>
+    <button onclick="document.body.removeChild(this.parentNode)">Abbrechen</button>
+  `;
   document.body.appendChild(div);
   document.getElementById('assign-ok').onclick = async ()=>{
-    const select = document.getElementById('assign-gig');
-    const selected = Array.from(select.selectedOptions).map(o=>o.value);
+    const selected = Array.from(el('assign-gig').selectedOptions).map(o=>o.value);
     for(let gig_id of selected){
       const { data: setlist } = await supabase.from('setlists').select('id').eq('gig_id', gig_id).single();
       const { data: exists } = await supabase.from('setlist_songs').select('*').eq('setlist_id', setlist.id).eq('song_id', song_id);
@@ -184,8 +181,8 @@ window.assignSong = async (song_id)=>{
 
 // ================= VOTING =================
 function voteButtons(song_id){
-  const colors = ['#ff4d4d','#ff944d','#ffdb4d','#94ff4d','#4dff88'];
-  return [1,2,3,4,5].map((v,i)=>`<button class="vote-btn" style="background:${colors[i]}" onclick="vote(${song_id},${v})">${v}</button>`).join(' ');
+  const colors = ['#e74c3c','#e67e22','#f1c40f','#2ecc71','#27ae60'];
+  return [1,2,3,4,5].map((v,i)=>`<button class="vote-btn vote-${v}" onclick="vote(${song_id},${v})">${v}</button>`).join(' ');
 }
 
 window.vote = async (song_id,value)=>{
@@ -197,24 +194,20 @@ window.vote = async (song_id,value)=>{
 // ================= DRAG & DROP =================
 window.allowDrop = e => e.preventDefault();
 window.drag = e => e.dataTransfer.setData("song", e.target.dataset.song);
-window.drop = e => {
-  e.preventDefault();
-  const song = e.dataTransfer.getData("song");
-  addSongToSetlist(song);
-};
+window.drop = e => { e.preventDefault(); const song = e.dataTransfer.getData("song"); addSongToSetlist(song); };
 
-// ================= SETLIST TIME =================
+// ================= TOTAL TIME =================
 function updateTotalTime(){
-  let sec = 0;
+  let sec=0;
   document.querySelectorAll('#setlist li').forEach(li=>{
     const m = li.textContent.match(/(\d+):(\d+)/);
     if(m) sec += +m[1]*60 + +m[2];
   });
-  document.getElementById('total-time').textContent = `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`;
+  el('total-time').textContent = `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`;
 }
 
 // ================= BANDKASSE =================
-document.getElementById('cash-btn').onclick = async ()=>{
+el('cash-btn').onclick = async ()=>{
   const amount = parseFloat(val('cash-amount')) || 0;
   await supabase.from('cash').upsert({ id:1, amount }, { onConflict:['id'] });
   loadCash();
@@ -222,19 +215,18 @@ document.getElementById('cash-btn').onclick = async ()=>{
 
 async function loadCash(){
   const { data } = await supabase.from('cash').select('*').single();
-  document.getElementById('current-cash').innerText = data ? data.amount.toFixed(2)+' €' : '0.00 €';
+  el('current-cash').innerText = data ? data.amount.toFixed(2)+' €' : '0.00 €';
 }
 
 // ================= TECH-RIDER =================
-document.getElementById('upload-techrider-btn').onclick = async ()=>{
-  const file = document.getElementById('techrider-file').files[0];
+el('upload-techrider-btn').onclick = async ()=>{
+  const file = el('techrider-file').files[0];
   if(!file) return alert('Datei auswählen');
   const { data, error } = await supabase.storage.from('techriders').upload(`band/${file.name}`, file, { upsert:true });
   if(error) return alert(error.message);
   const url = supabase.storage.from('techriders').getPublicUrl(`band/${file.name}`).data.publicUrl;
-  const link = document.getElementById('techrider-link');
-  link.href = url;
-  link.classList.remove('hidden');
+  const link = el('techrider-link');
+  link.href = url; link.classList.remove('hidden');
 };
 
 // ================= MERCH =================
@@ -252,14 +244,13 @@ const merchItems = [
 
 async function renderMerch(){
   const { data } = await supabase.from('merch').select('*');
-  const grid = document.getElementById('merch-grid');
-  grid.innerHTML = '';
+  const grid = el('merch-grid'); grid.innerHTML='';
   merchItems.forEach(item=>{
     const dbEntry = data.find(d=>d.item===item.key);
     const qty = dbEntry ? dbEntry.quantity : 0;
     const div = document.createElement('div');
-    div.className = 'merch-item';
-    div.innerHTML = `${item.label}: <input type="number" id="merch-${item.key}" min="0" value="${qty}"> <button>OK</button>`;
+    div.className='merch-item';
+    div.innerHTML=`${item.label}: <input type="number" id="merch-${item.key}" min="0" value="${qty}"><button>OK</button>`;
     div.querySelector('button').onclick = ()=> updateMerch(item.key);
     grid.appendChild(div);
   });
@@ -268,7 +259,7 @@ async function renderMerch(){
 async function updateMerch(itemKey){
   const qty = parseInt(val(`merch-${itemKey}`),10) || 0;
   const { error } = await supabase.from('merch').upsert({ item:itemKey, quantity:qty }, { onConflict:['item'] });
-  if(error){ console.error(error); alert('Fehler beim Speichern'); return; }
+  if(error){ alert('Fehler beim Speichern'); return; }
   renderMerch();
 }
 
@@ -278,3 +269,4 @@ async function loadAll(){
   await loadCash();
   await renderMerch();
 }
+
