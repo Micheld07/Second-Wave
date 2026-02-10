@@ -4,438 +4,94 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Second Wave 🎸</title>
-<style>
-/* ==================== CSS ==================== */
-* { box-sizing: border-box; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  margin: 0;
-  padding: 15px;
-  background: linear-gradient(135deg, #121212 0%, #1E1E1E 100%);
-  color: #eee;
-  line-height: 1.5;
-}
-h1 { text-align: center; color: #00ADB5; margin-bottom: 20px; font-size: 1.8em; }
-h2 { 
-  color: #eee;
-  background: #1E1E1E;
-  padding: 12px;
-  margin: 0 0 5px 0;
-  border-radius: 8px;
-  font-size: 1.3em;
-  cursor: pointer;
-}
-.section-content { background: #2C2C2C; padding: 15px; border-radius: 12px; margin-bottom: 15px; display:none; }
-.input-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
-input, select, textarea, button { padding: 10px 14px; border-radius: 6px; font-size: 14px; }
-input, textarea { border: 1px solid #00ADB5; background: #1E1E1E; color: #eee; }
-button {
-  background: linear-gradient(135deg, #00ADB5, #00FFF5);
-  color: #222831; font-weight: bold; cursor: pointer; border: none;
-  transition: all 0.2s;
-}
-button:hover { transform: scale(0.98); box-shadow: 0 4px 10px rgba(0,255,245,0.3); }
-ul { list-style: none; padding: 0; margin: 0; }
-li { background: #1E1E1E; margin: 8px 0; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
-a { color: #00FFF5; text-decoration: none; }
-a:hover { text-decoration: underline; }
-.hidden { display: none !important; }
-.merch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 10px; }
-.merch-item { display: flex; align-items: center; justify-content: space-between; padding: 6px; background: #1E1E1E; border-radius: 6px; }
-.logout-btn { background: #FF5722; color: #fff; margin-top: 20px; width: 100%; }
-.song-library li { display: flex; justify-content: space-between; margin-bottom: 5px; }
-.vote-btn { border-radius: 50%; width:30px; height:30px; margin-left:3px; color:#222; border:none; cursor:pointer; font-weight:bold; }
-.vote-btn:hover { transform: scale(1.1); }
-@media (max-width:600px){
-  .input-group { flex-direction: column; }
-  li { flex-direction: column; text-align: center; }
-}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<h1>Second Wave 🎸</h1>
 
-<!-- LOGIN -->
+<!-- ================= LOGIN ================= -->
 <section id="auth-section">
   <h2>🔑 Login / Registrierung</h2>
-  <div class="input-group">
-    <input id="email" type="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Passwort">
-    <button onclick="login()">Login</button>
-    <button onclick="signup()">Registrieren</button>
-  </div>
+  <input id="email" type="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Passwort">
+  <button onclick="login()">Login</button>
+  <button onclick="signup()">Registrieren</button>
   <p id="auth-status"></p>
 </section>
 
-<!-- MAIN -->
-<div id="main-content" class="hidden">
+<!-- ================= MAIN CONTENT ================= -->
+<div id="main-content">
 
-  <!-- Gigs -->
-  <section>
-    <h2 onclick="toggleSection('gigs-list-section')">📅 Auftritte & Proben</h2>
-    <div id="gigs-list-section" class="section-content">
-      <div class="input-group">
-        <input id="gig-name" placeholder="Name">
-        <input id="gig-date" type="date">
-        <textarea id="gig-notes" placeholder="Notizen"></textarea>
-        <button id="add-gig-btn">➕ Hinzufügen</button>
-      </div>
+  <button onclick="logout()">Abmelden</button>
+
+  <!-- ================= GIGS ================= -->
+  <section class="section">
+    <div class="section-header" onclick="toggleSection('gigs-content')">📅 Auftritte & Proben</div>
+    <div class="section-content" id="gigs-content">
+      <input id="gig-name" placeholder="Name">
+      <input id="gig-date" type="date">
+      <textarea id="gig-notes" placeholder="Notizen"></textarea>
+      <button id="add-gig-btn">➕ Hinzufügen</button>
       <ul id="gigs-list"></ul>
     </div>
   </section>
 
-  <!-- Gig Detail / Setlist -->
-  <section id="gig-detail-section" class="hidden">
-    <h2 id="gig-title"></h2>
-    <p id="gig-notes-view"></p>
-    <h3>🎵 Setlist</h3>
-    <ul id="setlist" ondragover="allowDrop(event)" ondrop="drop(event)"></ul>
-    <p>Gesamtdauer: <span id="total-time">00:00</span></p>
-  </section>
+  <!-- ================= SONGS ================= -->
+  <section class="section">
+    <div class="section-header" onclick="toggleSection('songs-content')">🎵 Songs</div>
+    <div class="section-content" id="songs-content">
+      <input id="song-name" placeholder="Song-Name">
+      <input id="song-duration" placeholder="mm:ss">
+      <input id="song-link" placeholder="YouTube-Link">
+      <button id="add-song-btn">➕ Vorschlagen</button>
 
-  <!-- Songs -->
-  <section>
-    <h2 onclick="toggleSection('songs-section')">🎵 Songs</h2>
-    <div id="songs-section" class="section-content">
-      <div class="input-group">
-        <input id="song-name" placeholder="Song-Name">
-        <input id="song-duration" placeholder="mm:ss">
-        <input id="song-link" placeholder="YouTube-Link">
-        <button id="add-song-btn">➕ Vorschlagen</button>
-        <button id="open-library-btn">🎶 Song-Bibliothek</button>
-      </div>
-      <ul id="library-list" class="song-library hidden"></ul>
+      <!-- Song-Bibliothek -->
+      <input type="text" id="song-search" placeholder="Suche Song...">
+      <ul id="library-list"></ul>
     </div>
   </section>
-<script type="module">
-// ================== SUPABASE ==================
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-const supabaseUrl = 'https://ugwkwxhqbkptuzexutve.supabase.co';
-const supabaseKey = 'sb_publishable_gyeVcsXZrq0yz3IS1C79QQ_H0K0g-9a';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
-// ================== GLOBALS ==================
-let currentUser = null;
-let currentGig = null;
+  <!-- ================= GIG DETAIL & SETLIST ================= -->
+  <section class="section" id="gig-detail-section">
+    <div class="section-header" onclick="toggleSection('gig-detail-content')">
+      <span id="gig-title">Gig Detail</span>
+    </div>
+    <div class="section-content" id="gig-detail-content">
+      <p id="gig-notes-view"></p>
+      <ul id="setlist"></ul>
+      <p>Gesamtdauer: <span id="total-time">00:00</span></p>
+    </div>
+  </section>
 
-// ================== HELPERS ==================
-function val(id){ return document.getElementById(id).value; }
-function toggleSection(id){ const e=document.getElementById(id); e.style.display=e.style.display==='none'?'block':'none'; }
+  <!-- ================= TECH-RIDER ================= -->
+  <section class="section">
+    <div class="section-header" onclick="toggleSection('techrider-content')">🎛️ Tech-Rider</div>
+    <div class="section-content" id="techrider-content">
+      <input type="file" id="techrider-file" accept=".pdf">
+      <button id="upload-techrider-btn">Upload PDF</button>
+      <p><a id="techrider-link" href="#" target="_blank" class="hidden">📄 Gespeicherten Tech-Rider öffnen</a></p>
+    </div>
+  </section>
 
-// ================== AUTH ==================
-window.signup = async ()=>{
-  const { error } = await supabase.auth.signUp({ email: val('email'), password: val('password') });
-  document.getElementById('auth-status').innerText = error?error.message:'Registrierung erfolgreich – E-Mail bestätigen!';
-};
-window.login = async ()=>{
-  const { data, error } = await supabase.auth.signInWithPassword({ email: val('email'), password: val('password') });
-  if(error){ document.getElementById('auth-status').innerText = error.message; return; }
-  setUser(data.user);
-};
-window.logout = async ()=>{
-  await supabase.auth.signOut();
-  currentUser=null; currentGig=null;
-  document.getElementById('auth-section').style.display='block';
-  document.getElementById('main-content').style.display='none';
-};
-function setUser(user){
-  currentUser=user;
-  document.getElementById('auth-section').style.display='none';
-  document.getElementById('main-content').style.display='block';
-  loadAll();
-}
+  <!-- ================= BANDKASSE ================= -->
+  <section class="section">
+    <div class="section-header" onclick="toggleSection('cash-content')">💰 Bandkasse</div>
+    <div class="section-content" id="cash-content">
+      <input id="cash-amount" type="number" step="0.01" placeholder="Neuer Betrag (€)">
+      <button id="cash-btn">Aktualisieren</button>
+      <p>Aktuell: <span id="current-cash">0.00 €</span></p>
+    </div>
+  </section>
 
-// Auth Listener
-supabase.auth.onAuthStateChange((_, session)=>{ if(session?.user) setUser(session.user); });
+  <!-- ================= MERCH ================= -->
+  <section class="section">
+    <div class="section-header" onclick="toggleSection('merch-content')">👕 Merch Lager</div>
+    <div class="section-content" id="merch-content">
+      <div id="merch-grid"></div>
+    </div>
+  </section>
 
-// ================== GIGS ==================
-document.getElementById('add-gig-btn').onclick = async ()=>{
-  const name=val('gig-name'); const date=val('gig-date'); const notes=val('gig-notes');
-  if(!name||!date) return alert('Name & Datum eingeben!');
-  const { data: gig } = await supabase.from('gigs').insert({ name, date, notes }).select().single();
-  await supabase.from('setlists').insert({ gig_id: gig.id });
-  loadGigs();
-};
-async function loadGigs(){
-  const { data } = await supabase.from('gigs').select('*').order('date');
-  const list=document.getElementById('gigs-list'); list.innerHTML='';
-  data.forEach(g=>{
-    const li=document.createElement('li'); li.textContent=`${g.date} – ${g.name}`;
-    li.onclick=()=>openGig(g); list.appendChild(li);
-  });
-}
-async function openGig(gig){
-  currentGig=gig;
-  document.getElementById('gig-detail-section').style.display='block';
-  document.getElementById('gig-title').textContent=`${gig.name} (${gig.date})`;
-  document.getElementById('gig-notes-view').textContent=gig.notes||'';
-  loadSetlist();
-}
-
-// ================== SETLIST ==================
-async function loadSetlist(){
-  if(!currentGig) return;
-  const { data: setlist } = await supabase.from('setlists').select('id').eq('gig_id', currentGig.id).single();
-  const { data } = await supabase.from('setlist_songs').select('position,songs(*)').eq('setlist_id', setlist.id).order('position');
-  const setlistEl=document.getElementById('setlist'); setlistEl.innerHTML='';
-  data.forEach(row=>{
-    const li=document.createElement('li'); li.draggable=true; li.dataset.song=row.songs.id;
-    li.innerHTML=`${row.songs.name} (${row.songs.duration}) ${voteButtons(row.songs.id)}`;
-    li.ondragstart=drag; setlistEl.appendChild(li);
-  });
-  updateTotalTime();
-}
-async function addSongToSetlist(song_id){
-  if(!currentGig) return;
-  const { data: setlist } = await supabase.from('setlists').select('id').eq('gig_id', currentGig.id).single();
-  const existing=await supabase.from('setlist_songs').select('*').eq('setlist_id', setlist.id).eq('song_id', song_id);
-  if(existing.data.length>0) return;
-  const pos=document.querySelectorAll('#setlist li').length+1;
-  await supabase.from('setlist_songs').insert({ setlist_id:setlist.id,song_id,position:pos });
-  loadSetlist();
-}
-
-// ================== SONGS & BIBLIOTHEK ==================
-document.getElementById('add-song-btn').onclick=async ()=>{
-  const name=val('song-name'); const duration=val('song-duration'); const link=val('song-link');
-  if(!name||!duration) return alert('Songname & Dauer eingeben!');
-  const existing=await supabase.from('songs').select('*').eq('name',name);
-  if(existing.data.length>0) return alert('Song existiert bereits!');
-  await supabase.from('songs').insert({ name,duration,link });
-  document.getElementById('song-name').value='';
-  document.getElementById('song-duration').value='';
-  document.getElementById('song-link').value='';
-  openLibrary();
-};
-document.getElementById('open-library-btn').onclick=openLibrary;
-async function openLibrary(){
-  const { data }=await supabase.from('songs').select('*');
-  const list=document.getElementById('library-list'); list.innerHTML=''; list.classList.remove('hidden');
-  data.forEach(s=>{
-    const li=document.createElement('li');
-    li.innerHTML=`<a href="${s.link||'#'}" target="_blank">${s.name} (${s.duration})</a>
-    <button onclick="assignSong(${s.id})">🎵 Setlists</button>`;
-    list.appendChild(li);
-  });
-}
-window.assignSong=async (song_id)=>{
-  const { data:gigs }=await supabase.from('gigs').select('*').order('date');
-  const gigOptions=gigs.map(g=>`<option value="${g.id}">${g.name} (${g.date})</option>`).join('');
-  const div=document.createElement('div'); div.innerHTML=`
-    <h3>Song zu Setlists zuordnen</h3>
-    <select id="assign-gig" multiple>${gigOptions}</select>
-    <button id="assign-ok">OK</button>
-    <button onclick="document.body.removeChild(this.parentNode)">Abbrechen</button>`;
-  document.body.appendChild(div);
-  document.getElementById('assign-ok').onclick=async ()=>{
-    const select=document.getElementById('assign-gig'); const selected=Array.from(select.selectedOptions).map(o=>o.value);
-    for(let gig_id of selected){
-      const { data: setlist }=await supabase.from('setlists').select('id').eq('gig_id',gig_id).single();
-      const { data: exists }=await supabase.from('setlist_songs').select('*').eq('setlist_id',setlist.id).eq('song_id',song_id);
-      if(exists.length===0){ const pos=document.querySelectorAll('#setlist li').length+1; await supabase.from('setlist_songs').insert({ setlist_id:setlist.id,song_id,position:pos }); }
-    }
-    document.body.removeChild(div); alert('Song zugewiesen!');
-  };
-};
-
-// ================== VOTING ==================
-function voteButtons(song_id){
-  const colors=['#ff4d4d','#ff944d','#ffdb4d','#94ff4d','#4dff88'];
-  return [1,2,3,4,5].map((v,i)=>`<button class="vote-btn" style="background:${colors[i]}" onclick="vote(${song_id},${v})">${v}</button>`).join(' ');
-}
-window.vote=async (song_id,value)=>{
-  if(!currentGig) return alert('Bitte zuerst einen Gig auswählen!');
-  await supabase.from('votes').insert({ gig_id:currentGig.id,song_id,value });
-  loadSetlist();
-};
-
-// ================== DRAG & DROP ==================
-window.allowDrop=e=>e.preventDefault();
-window.drag=e=>e.dataTransfer.setData("song",e.target.dataset.song);
-window.drop=e=>{ e.preventDefault(); const song=e.dataTransfer.getData("song"); addSongToSetlist(song); };
-
-// ================== TOTAL TIME ==================
-function updateTotalTime(){
-  let sec=0; document.querySelectorAll('#setlist li').forEach(li=>{
-    const m=li.textContent.match(/(\d+):(\d+)/); if(m) sec+=+m[1]*60+ +m[2];
-  });
-  document.getElementById('total-time').textContent=`${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`;
-}
-
-// ================== BANDKASSE ==================
-document.getElementById('cash-btn').onclick=async ()=>{
-  const amount=parseFloat(val('cash-amount'))||0;
-  await supabase.from('cash').upsert({ id:1, amount }, { onConflict:['id'] });
-  loadCash();
-};
-async function loadCash(){
-  const { data }=await supabase.from('cash').select('*').single();
-  document.getElementById('current-cash').innerText=data?data.amount.toFixed(2)+' €':'0.00 €';
-}
-
-// ================== TECH-RIDER ==================
-document.getElementById('upload-techrider-btn').onclick=async ()=>{
-  const file=document.getElementById('techrider-file').files[0]; if(!file) return alert('Datei auswählen');
-  const { data, error }=await supabase.storage.from('techriders').upload(`band/${file.name}`,file,{upsert:true});
-  if(error) return alert(error.message);
-  const url=supabase.storage.from('techriders').getPublicUrl(`band/${file.name}`).data.publicUrl;
-  const link=document.getElementById('techrider-link'); link.href=url; link.classList.remove('hidden');
-};
-
-// ================== MERCH ==================
-const merchItems=[
-  { key:'schwarz-s', label:'Schwarz S' }, { key:'schwarz-m', label:'Schwarz M' },
-  { key:'schwarz-l', label:'Schwarz L' }, { key:'schwarz-xl', label:'Schwarz XL' },
-  { key:'schwarz-xxl', label:'Schwarz XXL' }, { key:'weiß-s', label:'Weiß S' },
-  { key:'weiß-m', label:'Weiß M' }, { key:'weiß-l', label:'Weiß L' },
-  { key:'weiß-xl', label:'Weiß XL' }, { key:'weiß-xxl', label:'Weiß XXL' },
-  { key:'blau-s', label:'Blau S' }, { key:'blau-m', label:'Blau M' },
-  { key:'blau-l', label:'Blau L' }, { key:'blau-xl', label:'Blau XL' },
-  { key:'blau-xxl', label:'Blau XXL' }, { key:'anhänger', label:'Anhänger' },
-  { key:'öffner', label:'Öffner' }
-];
-async function renderMerch(){
-  const { data }=await supabase.from('merch').select('*'); const grid=document.getElementById('merch-grid'); grid.innerHTML='';
-  merchItems.forEach(item=>{
-    const dbEntry=data.find(d=>d.item===item.key); const qty=dbEntry?dbEntry.quantity:0;
-    const div=document.createElement('div'); div.className='merch-item';
-    div.innerHTML=`${item.label}: <input type="number" id="merch-${item.key}" min="0" value="${qty}"> <button>OK</button>`;
-    div.querySelector('button').onclick=()=>updateMerch(item.key); grid.appendChild(div);
-  });
-}
-async function updateMerch(itemKey){
-  const qty=parseInt(val(`merch-${itemKey}`),10)||0;
-  const { error }=await supabase.from('merch').upsert({ item:itemKey, quantity:qty }, { onConflict:['item'] });
-  if(error){ console.error(error); alert('Fehler beim Speichern'); return; }
-  renderMerch();
-}
-
-// ================== LOAD ALL ==================
-async function loadAll(){ await loadGigs(); await loadCash(); await renderMerch(); }
-
-</script>
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Second Wave 🎸</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;}
-body{background:#1e1e1e;color:#eee;line-height:1.5;padding:15px;}
-h1{text-align:center;color:#fff;margin-bottom:20px;font-size:1.8em;}
-h2{cursor:pointer;background:#333;color:#fff;padding:12px;border-radius:8px;margin-bottom:5px;}
-section{background:#2c2c2c;padding:15px;border-radius:12px;margin-bottom:15px;}
-.input-group{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;}
-input,select,textarea,button{padding:10px;border-radius:6px;font-size:14px;}
-input,textarea,select{border:1px solid #555;background:#1e1e1e;color:#eee;}
-button{background:#4a90e2;color:#fff;border:none;cursor:pointer;transition:0.2s;}
-button:hover{transform:scale(0.98);}
-ul{list-style:none;margin:0;padding:0;}
-li{background:#3a3a3a;padding:10px;border-radius:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
-.hidden{display:none;}
-.vote-btn{border:none;color:#fff;padding:4px 8px;border-radius:4px;margin-left:2px;cursor:pointer;}
-.merch-item{display:flex;align-items:center;gap:5px;margin-bottom:5px;}
-a{color:#4a90e2;text-decoration:none;}
-a:hover{text-decoration:underline;}
-@media(max-width:600px){.input-group{flex-direction:column;}li{flex-direction:column;align-items:flex-start;}}
-</style>
-</head>
-<body>
-
-<h1>Second Wave 🎸</h1>
-
-<!-- LOGIN -->
-<section id="auth-section">
-<h2>🔑 Login / Registrierung</h2>
-<div class="input-group">
-<input type="email" id="email" placeholder="Email">
-<input type="password" id="password" placeholder="Passwort">
-<button onclick="login()">Login</button>
-<button onclick="signup()">Registrieren</button>
 </div>
-<p id="auth-status"></p>
-</section>
 
-<!-- MAIN CONTENT -->
-<div id="main-content" style="display:none;">
-
-<!-- Gigs -->
-<section>
-<h2 onclick="toggleSection('gigs-section')">📅 Auftritte & Proben</h2>
-<div id="gigs-section" style="display:none;">
-<div class="input-group">
-<input id="gig-name" placeholder="Name">
-<input id="gig-date" type="date">
-<textarea id="gig-notes" placeholder="Notizen"></textarea>
-<button id="add-gig-btn">➕ Hinzufügen</button>
-</div>
-<ul id="gigs-list"></ul>
-</div>
-</section>
-
-<!-- Gig Detail / Setlist -->
-<section id="gig-detail-section" style="display:none;">
-<h2 id="gig-title"></h2>
-<p id="gig-notes-view"></p>
-<ul id="setlist" ondragover="allowDrop(event)" ondrop="drop(event)"></ul>
-<p>Gesamtdauer: <span id="total-time">00:00</span></p>
-</section>
-
-<!-- Songs -->
-<section>
-<h2 onclick="toggleSection('songs-section')">🎵 Songs & Bibliothek</h2>
-<div id="songs-section" style="display:none;">
-<div class="input-group">
-<input id="song-name" placeholder="Song-Name">
-<input id="song-duration" placeholder="mm:ss">
-<input id="song-link" placeholder="YouTube-Link">
-<button id="add-song-btn">➕ Vorschlagen</button>
-<button id="open-library-btn">📚 Bibliothek</button>
-</div>
-<ul id="library-list" class="hidden"></ul>
-</div>
-</section>
-
-<!-- Bandkasse -->
-<section>
-<h2 onclick="toggleSection('cash-section')">💰 Bandkasse</h2>
-<div id="cash-section" style="display:none;">
-<div class="input-group">
-<input id="cash-amount" type="number" step="0.01" placeholder="Neuer Betrag (€)">
-<button id="cash-btn">Aktualisieren</button>
-</div>
-<p>Aktuell: <span id="current-cash">0.00 €</span></p>
-</div>
-</section>
-
-<!-- Tech-Rider -->
-<section>
-<h2 onclick="toggleSection('tech-section')">🎛️ Tech-Rider</h2>
-<div id="tech-section" style="display:none;">
-<div class="input-group">
-<input type="file" id="techrider-file" accept=".pdf">
-<button id="upload-techrider-btn">Upload PDF</button>
-</div>
-<p><a id="techrider-link" href="#" target="_blank" class="hidden">📄 Gespeicherten Tech-Rider öffnen</a></p>
-</div>
-</section>
-
-<!-- Merch-Lager -->
-<section>
-<h2 onclick="toggleSection('merch-section')">👕 Merch Lager</h2>
-<div id="merch-section" style="display:none;">
-<div id="merch-grid"></div>
-</div>
-</section>
-
-<!-- Logout -->
-<section>
-<button onclick="logout()">Abmelden</button>
-</section>
-
-<!-- JS -->
 <script type="module" src="app.js"></script>
-</div>
 </body>
 </html>

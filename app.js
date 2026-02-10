@@ -29,39 +29,41 @@ window.login = async function(){
   const email = val('email');
   const password = val('password');
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if(error){ authStatus.innerText = error.message; return; }
-  setUser(data.user);
+  if(error){
+    authStatus.innerText = error.message;
+    return;
+  }
+  window.setUser(data.user);
 };
 
 window.logout = async function(){
   await supabase.auth.signOut();
   currentUser = null;
   currentGig = null;
-  authSection.classList.remove('hidden');
-  mainContent.classList.add('hidden');
-  authStatus.innerText = '';
+  authSection.style.display = 'block';
+  mainContent.style.display = 'none';
+  authStatus.innerText = 'Abgemeldet';
 };
 
 window.setUser = function(user){
   currentUser = user;
-  authSection.classList.add('hidden');
-  mainContent.classList.remove('hidden');
+  authSection.style.display = 'none';
+  mainContent.style.display = 'block';
   authStatus.innerText = `Eingeloggt als ${user.email}`;
   loadAll();
 };
 
 // Auth-State Listener
 supabase.auth.onAuthStateChange((_, session)=>{
-  if(session?.user) setUser(session.user);
+  if(session?.user) window.setUser(session.user);
 });
 
-// ================= COLLAPSIBLE SECTIONS =================
-function initCollapsibles(){
-  document.querySelectorAll('.collapsible').forEach(section=>{
-    const title = section.querySelector('.collapsible-title');
-    title.onclick = ()=> section.classList.toggle('hidden-content');
-  });
-}
+// ================= MENU =================
+window.toggleSection = id => {
+  const el = document.getElementById(id);
+  if(el.style.display === 'none') el.style.display = 'block';
+  else el.style.display = 'none';
+};
 
 // ================= GIGS =================
 document.getElementById('add-gig-btn').onclick = async () => {
@@ -69,7 +71,6 @@ document.getElementById('add-gig-btn').onclick = async () => {
   const date = val('gig-date');
   const notes = val('gig-notes');
   if(!name || !date) return alert('Name & Datum eingeben!');
-
   const { data: gig } = await supabase.from('gigs').insert({ name, date, notes }).select().single();
   await supabase.from('setlists').insert({ gig_id: gig.id });
   loadGigs();
@@ -89,8 +90,7 @@ async function loadGigs(){
 
 async function openGig(gig){
   currentGig = gig;
-  const section = document.getElementById('gig-detail-section');
-  section.classList.remove('hidden-content');
+  toggleSection('gig-detail-section');
   document.getElementById('gig-title').textContent = `${gig.name} (${gig.date})`;
   document.getElementById('gig-notes-view').textContent = gig.notes || '';
   loadSetlist();
@@ -101,7 +101,6 @@ async function loadSetlist(){
   if(!currentGig) return;
   const { data: setlist } = await supabase.from('setlists').select('id').eq('gig_id', currentGig.id).single();
   const { data } = await supabase.from('setlist_songs').select('position,songs(*)').eq('setlist_id', setlist.id).order('position');
-
   const setlistEl = document.getElementById('setlist');
   setlistEl.innerHTML = '';
   data.forEach(row=>{
@@ -142,7 +141,7 @@ document.getElementById('add-song-btn').onclick = async ()=>{
 document.getElementById('open-library-btn').onclick = openLibrary;
 
 async function openLibrary(){
-  document.getElementById('song-library').classList.remove('hidden');
+  document.getElementById('library-list').classList.remove('hidden');
   const { data } = await supabase.from('songs').select('*');
   renderLibrary(data);
 }
@@ -152,10 +151,8 @@ function renderLibrary(songs){
   libraryList.innerHTML = '';
   songs.forEach(song=>{
     const li = document.createElement('li');
-    li.innerHTML = `
-      <a href="${song.link || '#'}" target="_blank">${song.name} (${song.duration})</a>
-      <button onclick="assignSong(${song.id})">🎵 Setlists zuordnen</button>
-    `;
+    li.innerHTML = `<a href="${song.link||'#'}" target="_blank">${song.name} (${song.duration})</a>
+    <button onclick="assignSong(${song.id})">🎵 Setlists zuordnen</button>`;
     libraryList.appendChild(li);
   });
 }
@@ -164,12 +161,10 @@ window.assignSong = async (song_id)=>{
   const { data: gigs } = await supabase.from('gigs').select('*').order('date');
   const gigOptions = gigs.map(g=>`<option value="${g.id}">${g.name} (${g.date})</option>`).join('');
   const div = document.createElement('div');
-  div.innerHTML = `
-    <h3>Song zu Setlists zuordnen</h3>
-    <select id="assign-gig" multiple>${gigOptions}</select>
-    <button id="assign-ok">OK</button>
-    <button onclick="document.body.removeChild(this.parentNode)">Abbrechen</button>
-  `;
+  div.style.position='fixed'; div.style.top='20%'; div.style.left='30%'; div.style.background='#333'; div.style.color='#fff'; div.style.padding='15px'; div.style.borderRadius='8px'; div.style.zIndex='999';
+  div.innerHTML = `<h3>Song zu Setlists zuordnen</h3>
+    <select id="assign-gig" multiple style="width:100%">${gigOptions}</select>
+    <div style="margin-top:10px;"><button id="assign-ok">OK</button> <button onclick="document.body.removeChild(this.parentNode)">Abbrechen</button></div>`;
   document.body.appendChild(div);
   document.getElementById('assign-ok').onclick = async ()=>{
     const select = document.getElementById('assign-gig');
@@ -178,7 +173,7 @@ window.assignSong = async (song_id)=>{
       const { data: setlist } = await supabase.from('setlists').select('id').eq('gig_id', gig_id).single();
       const { data: exists } = await supabase.from('setlist_songs').select('*').eq('setlist_id', setlist.id).eq('song_id', song_id);
       if(exists.length===0){
-        const pos = exists.length + 1;
+        const pos = exists.length+1;
         await supabase.from('setlist_songs').insert({ setlist_id: setlist.id, song_id, position: pos });
       }
     }
@@ -190,7 +185,7 @@ window.assignSong = async (song_id)=>{
 // ================= VOTING =================
 function voteButtons(song_id){
   const colors = ['#ff4d4d','#ff944d','#ffdb4d','#94ff4d','#4dff88'];
-  return [1,2,3,4,5].map((v,i)=>`<button style="background:${colors[i]}" onclick="vote(${song_id},${v})">${v}</button>`).join(' ');
+  return [1,2,3,4,5].map((v,i)=>`<button class="vote-btn" style="background:${colors[i]}" onclick="vote(${song_id},${v})">${v}</button>`).join(' ');
 }
 
 window.vote = async (song_id,value)=>{
@@ -282,5 +277,4 @@ async function loadAll(){
   await loadGigs();
   await loadCash();
   await renderMerch();
-  initCollapsibles();
 }
