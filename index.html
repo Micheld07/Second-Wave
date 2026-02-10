@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Second Wave 🎸</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Second Wave 🎸</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
   <h1>Second Wave 🎸</h1>
 
-  <!-- LOGIN / AUTH -->
+  <!-- ================= LOGIN ================= -->
   <section id="auth-section">
     <h2>🔑 Login / Registrierung</h2>
     <div class="input-group">
@@ -21,13 +22,13 @@
     <p id="auth-status"></p>
   </section>
 
-  <!-- MAIN CONTENT -->
+  <!-- ================= HAUPTBEREICH ================= -->
   <div id="main-content" class="hidden">
 
-    <!-- Gigs -->
-    <section class="collapsible">
-      <h2 onclick="this.nextElementSibling.classList.toggle('hidden')">📅 Auftritte & Proben</h2>
-      <div class="content hidden">
+    <!-- ================= GIGS ================= -->
+    <section>
+      <h2 class="collapsible-title" onclick="this.nextElementSibling.classList.toggle('hidden')">📅 Auftritte & Proben</h2>
+      <div class="hidden-content">
         <div class="input-group">
           <input id="gig-name" placeholder="Name">
           <input id="gig-date" type="date">
@@ -38,50 +39,47 @@
       </div>
     </section>
 
-    <!-- Setlist -->
-    <section class="collapsible">
-      <h2 onclick="this.nextElementSibling.classList.toggle('hidden')">🎵 Setlist</h2>
-      <div class="content hidden">
-        <ul id="setlist"></ul>
-        <p>Gesamtdauer: <span id="total-time">00:00</span></p>
+    <!-- ================= SETLIST ================= -->
+    <section id="gig-detail-section" class="hidden">
+      <h2 id="gig-title"></h2>
+      <p id="gig-notes-view"></p>
+
+      <h3>🎵 Setlist</h3>
+      <ul id="setlist"></ul>
+      <p>Gesamtdauer: <span id="total-time">00:00</span></p>
+
+      <div class="input-group">
+        <input id="song-name" placeholder="Song-Name">
+        <input id="song-duration" placeholder="mm:ss">
+        <input id="song-link" placeholder="YouTube-Link">
+        <button id="add-song-btn">➕ Vorschlagen</button>
+        <button id="open-library-btn">🎶 Song-Bibliothek öffnen</button>
+      </div>
+
+      <!-- Song-Bibliothek -->
+      <div id="song-library" class="hidden">
+        <h3>🎵 Song-Bibliothek</h3>
+        <ul id="library-list"></ul>
+        <button onclick="closeLibrary()">Schließen</button>
       </div>
     </section>
 
-    <!-- Songs -->
-    <section class="collapsible">
-      <h2 onclick="this.nextElementSibling.classList.toggle('hidden')">🎶 Songs</h2>
-      <div class="content hidden">
-        <div class="input-group">
-          <input id="song-name" placeholder="Song-Name">
-          <input id="song-duration" placeholder="mm:ss">
-          <input id="song-link" placeholder="YouTube-Link">
-          <button id="add-song-btn">➕ Vorschlagen</button>
-          <button id="open-library-btn">📚 Bibliothek öffnen</button>
-        </div>
-        <div id="song-library" class="hidden">
-          <ul id="library-list"></ul>
-        </div>
-      </div>
-    </section>
-
-    <!-- Tech-Rider -->
-    <section class="collapsible">
-      <h2 onclick="this.nextElementSibling.classList.toggle('hidden')">🎛️ Tech-Rider</h2>
-      <div class="content hidden">
+    <!-- ================= TECH-RIDER ================= -->
+    <section>
+      <h2 class="collapsible-title" onclick="this.nextElementSibling.classList.toggle('hidden')">🎛️ Tech-Rider</h2>
+      <div class="hidden-content">
         <div class="input-group">
           <input type="file" id="techrider-file" accept=".pdf">
           <button id="upload-techrider-btn">Upload PDF</button>
         </div>
-        <p>
-          <a id="techrider-link" href="#" target="_blank" class="hidden">📄 Gespeicherten Tech-Rider öffnen</a>
-        </p>
+        <p><a id="techrider-link" href="#" target="_blank" class="hidden">📄 Gespeicherten Tech-Rider öffnen</a></p>
       </div>
     </section>
 
-    <!-- Bandkasse -->
-    <section class="collapsible">
-      <h2 onclick="this.nextElementSibling.classList.toggle('hidden')">💰 Bandkasse</h2>
-      <div class="content hidden">
+    <!-- ================= BANDKASSE ================= -->
+    <section>
+      <h2 class="collapsible-title" onclick="this.nextElementSibling.classList.toggle('hidden')">💰 Bandkasse</h2>
+      <div class="hidden-content">
         <div class="input-group">
           <input id="cash-amount" type="number" step="0.01" placeholder="Neuer Betrag (€)">
           <button id="cash-btn">Aktualisieren</button>
@@ -90,18 +88,13 @@
       </div>
     </section>
 
-    <!-- Merch Lager -->
-    <section class="collapsible">
-      <h2 onclick="this.nextElementSibling.classList.toggle('hidden')">👕 Merch Lager</h2>
-      <div class="content hidden">
+    <!-- ================= MERCH-LAGER ================= -->
+    <section>
+      <h2 class="collapsible-title" onclick="this.nextElementSibling.classList.toggle('hidden')">👕 Merch Lager</h2>
+      <div class="hidden-content">
         <div class="merch-grid" id="merch-grid"></div>
         <p><a href="https://share.google/lJVJCeUQLYGjKOOFu" target="_blank">🛒 Merch nachbestellen</a></p>
       </div>
-    </section>
-
-    <!-- Logout -->
-    <section>
-      <button onclick="logout()">Logout</button>
     </section>
 
   </div>

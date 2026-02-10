@@ -29,10 +29,7 @@ window.login = async function(){
   const email = val('email');
   const password = val('password');
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if(error){
-    authStatus.innerText = error.message;
-    return;
-  }
+  if(error){ authStatus.innerText = error.message; return; }
   setUser(data.user);
 };
 
@@ -42,21 +39,29 @@ window.logout = async function(){
   currentGig = null;
   authSection.classList.remove('hidden');
   mainContent.classList.add('hidden');
-  authStatus.innerText = 'Abgemeldet';
+  authStatus.innerText = '';
 };
 
-function setUser(user){
+window.setUser = function(user){
   currentUser = user;
   authSection.classList.add('hidden');
   mainContent.classList.remove('hidden');
   authStatus.innerText = `Eingeloggt als ${user.email}`;
   loadAll();
-}
+};
 
 // Auth-State Listener
 supabase.auth.onAuthStateChange((_, session)=>{
   if(session?.user) setUser(session.user);
 });
+
+// ================= COLLAPSIBLE SECTIONS =================
+function initCollapsibles(){
+  document.querySelectorAll('.collapsible').forEach(section=>{
+    const title = section.querySelector('.collapsible-title');
+    title.onclick = ()=> section.classList.toggle('hidden-content');
+  });
+}
 
 // ================= GIGS =================
 document.getElementById('add-gig-btn').onclick = async () => {
@@ -66,7 +71,7 @@ document.getElementById('add-gig-btn').onclick = async () => {
   if(!name || !date) return alert('Name & Datum eingeben!');
 
   const { data: gig } = await supabase.from('gigs').insert({ name, date, notes }).select().single();
-  await supabase.from('setlists').insert({ gig_id: gig.id }); // automatisch Setlist
+  await supabase.from('setlists').insert({ gig_id: gig.id });
   loadGigs();
 };
 
@@ -84,11 +89,10 @@ async function loadGigs(){
 
 async function openGig(gig){
   currentGig = gig;
-  document.getElementById('gig-title')?.remove();
-  const title = document.createElement('h3');
-  title.id = 'gig-title';
-  title.textContent = `${gig.name} (${gig.date})`;
-  document.querySelector('#main-content').prepend(title);
+  const section = document.getElementById('gig-detail-section');
+  section.classList.remove('hidden-content');
+  document.getElementById('gig-title').textContent = `${gig.name} (${gig.date})`;
+  document.getElementById('gig-notes-view').textContent = gig.notes || '';
   loadSetlist();
 }
 
@@ -104,10 +108,7 @@ async function loadSetlist(){
     const li = document.createElement('li');
     li.draggable = true;
     li.dataset.song = row.songs.id;
-    li.innerHTML = `
-      <a href="${row.songs.link || '#'}" target="_blank">${row.songs.name}</a> (${row.songs.duration})
-      ${voteButtons(row.songs.id)}
-    `;
+    li.innerHTML = `${row.songs.name} (${row.songs.duration}) ${voteButtons(row.songs.id)}`;
     li.ondragstart = drag;
     setlistEl.appendChild(li);
   });
@@ -118,7 +119,7 @@ async function addSongToSetlist(song_id){
   if(!currentGig) return;
   const { data: setlist } = await supabase.from('setlists').select('id').eq('gig_id', currentGig.id).single();
   const existing = await supabase.from('setlist_songs').select('*').eq('setlist_id', setlist.id).eq('song_id', song_id);
-  if(existing.data.length>0) return; // keine Duplikate
+  if(existing.data.length>0) return;
   const pos = document.querySelectorAll('#setlist li').length + 1;
   await supabase.from('setlist_songs').insert({ setlist_id: setlist.id, song_id, position: pos });
   loadSetlist();
@@ -130,10 +131,6 @@ document.getElementById('add-song-btn').onclick = async ()=>{
   const duration = val('song-duration');
   const link = val('song-link');
   if(!name || !duration) return alert('Songname & Dauer eingeben!');
-
-  const { data: exists } = await supabase.from('songs').select('*').eq('name', name);
-  if(exists.length>0) return alert('Song existiert bereits!');
-
   await supabase.from('songs').insert({ name, duration, link });
   document.getElementById('song-name').value='';
   document.getElementById('song-duration').value='';
@@ -181,7 +178,7 @@ window.assignSong = async (song_id)=>{
       const { data: setlist } = await supabase.from('setlists').select('id').eq('gig_id', gig_id).single();
       const { data: exists } = await supabase.from('setlist_songs').select('*').eq('setlist_id', setlist.id).eq('song_id', song_id);
       if(exists.length===0){
-        const pos = document.querySelectorAll('#setlist li').length + 1;
+        const pos = exists.length + 1;
         await supabase.from('setlist_songs').insert({ setlist_id: setlist.id, song_id, position: pos });
       }
     }
@@ -193,7 +190,7 @@ window.assignSong = async (song_id)=>{
 // ================= VOTING =================
 function voteButtons(song_id){
   const colors = ['#ff4d4d','#ff944d','#ffdb4d','#94ff4d','#4dff88'];
-  return [1,2,3,4,5].map((v,i)=>`<button class="vote-btn" style="background:${colors[i]}" onclick="vote(${song_id},${v})">${v}</button>`).join(' ');
+  return [1,2,3,4,5].map((v,i)=>`<button style="background:${colors[i]}" onclick="vote(${song_id},${v})">${v}</button>`).join(' ');
 }
 
 window.vote = async (song_id,value)=>{
@@ -285,4 +282,5 @@ async function loadAll(){
   await loadGigs();
   await loadCash();
   await renderMerch();
+  initCollapsibles();
 }
