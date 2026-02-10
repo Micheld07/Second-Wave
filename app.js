@@ -14,7 +14,6 @@ const authStatus = document.getElementById('auth-status');
 const authSection = document.getElementById('auth-section');
 const mainContent = document.getElementById('main-content');
 
-// ================= HELPERS =================
 function val(id){ return document.getElementById(id).value; }
 function el(id){ return document.getElementById(id); }
 
@@ -52,11 +51,20 @@ window.setUser = function(user){
 supabase.auth.onAuthStateChange((_, session)=>{ if(session?.user) window.setUser(session.user); });
 
 // ================= SECTIONS =================
+// alle Bereiche auf-/zuklappbar
 document.querySelectorAll('.section').forEach(section=>{
   section.addEventListener('click', e=>{
-    if(e.target.classList.contains('section-header') || section===e.currentTarget){
+    // auf-/zuklappen nur, wenn auf header oder section selbst geklickt
+    if(e.target.classList.contains('section-header') || e.currentTarget===e.target){
       const content = section.querySelector('.section-content');
-      if(content) content.style.display = (content.style.display==='block')?'none':'block';
+      if(content.style.display==='block'){
+        content.style.display='none';
+      } else {
+        content.style.display='block';
+        // spezielle Aktionen beim Öffnen
+        if(section.id==='songs-section') loadLibrary();
+        if(section.id==='merch-section') renderMerch();
+      }
     }
   });
 });
@@ -251,5 +259,5 @@ async function loadAll(){
   await loadGigs();
   await loadLibrary();
   await loadCash();
-  await renderMerch();
+  // Merch wird beim Öffnen geladen, nicht hier
 }

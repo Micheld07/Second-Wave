@@ -24,7 +24,7 @@
   <!-- ================= GIGS ================= -->
   <section class="section" id="gigs-section">
     <div class="section-header">Gigs</div>
-    <div class="section-content" style="display:none;">
+    <div class="section-content">
       <input type="text" id="gig-name" placeholder="Gigname">
       <input type="date" id="gig-date">
       <input type="text" id="gig-notes" placeholder="Notizen">
@@ -43,7 +43,7 @@
   <!-- ================= SONGS ================= -->
   <section class="section" id="songs-section">
     <div class="section-header">Songs</div>
-    <div class="section-content" style="display:none;">
+    <div class="section-content">
       <input type="text" id="song-name" placeholder="Songname">
       <input type="text" id="song-duration" placeholder="Dauer z.B. 03:45">
       <input type="text" id="song-link" placeholder="Link (optional)">
@@ -56,7 +56,7 @@
   <!-- ================= TECH-RIDER ================= -->
   <section class="section" id="techrider-section">
     <div class="section-header">Tech-Rider</div>
-    <div class="section-content" style="display:none;">
+    <div class="section-content">
       <input type="file" id="techrider-file">
       <button id="upload-techrider-btn">Hochladen</button>
       <a id="techrider-link" class="hidden" target="_blank">Link anzeigen</a>
@@ -66,7 +66,7 @@
   <!-- ================= BANDKASSE ================= -->
   <section class="section" id="cash-section">
     <div class="section-header">Bandkasse</div>
-    <div class="section-content" style="display:none;">
+    <div class="section-content">
       <input type="number" id="cash-amount" placeholder="Betrag eingeben">
       <button id="cash-btn">Speichern</button>
       <p>Aktueller Stand: <span id="current-cash">0.00 €</span></p>
@@ -76,7 +76,7 @@
   <!-- ================= MERCH ================= -->
   <section class="section" id="merch-section">
     <div class="section-header">Merch</div>
-    <div class="section-content" style="display:none;">
+    <div class="section-content">
       <div id="merch-grid"></div>
       <p><a href="#">Merch nachbestellen</a></p>
     </div>
@@ -84,8 +84,9 @@
 
   <!-- ================= LOGOUT ================= -->
   <button onclick="logout()" style="margin-top:20px;">Abmelden</button>
+
 </main>
 
-<script src="script.js"></script>
+<script src="script.js" type="module"></script>
 </body>
 </html>
