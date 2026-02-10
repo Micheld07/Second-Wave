@@ -14,7 +14,7 @@ const authStatus = document.getElementById('auth-status');
 const authSection = document.getElementById('auth-section');
 const mainContent = document.getElementById('main-content');
 
-// ================= HELPER =================
+// ================= HELPERS =================
 function val(id){ return document.getElementById(id).value; }
 function el(id){ return document.getElementById(id); }
 
@@ -49,21 +49,22 @@ window.setUser = function(user){
   loadAll();
 };
 
-// Auth State Listener
 supabase.auth.onAuthStateChange((_, session)=>{ if(session?.user) window.setUser(session.user); });
 
-// ================= SECTION TOGGLE =================
-window.toggleSection = id => {
-  const sec = el(id);
-  sec.style.display = (sec.style.display === 'block') ? 'none' : 'block';
-};
+// ================= SECTIONS =================
+document.querySelectorAll('.section').forEach(section=>{
+  section.addEventListener('click', e=>{
+    if(e.target.classList.contains('section-header') || section===e.currentTarget){
+      const content = section.querySelector('.section-content');
+      if(content) content.style.display = (content.style.display==='block')?'none':'block';
+    }
+  });
+});
 
 // ================= GIGS =================
-document.getElementById('add-gig-btn').onclick = async () => {
-  const name = val('gig-name');
-  const date = val('gig-date');
-  const notes = val('gig-notes');
-  if(!name || !date) return alert('Name & Datum eingeben!');
+el('add-gig-btn').onclick = async () => {
+  const name = val('gig-name'); const date = val('gig-date'); const notes = val('gig-notes');
+  if(!name||!date) return alert('Name & Datum eingeben!');
   const { data: gig } = await supabase.from('gigs').insert({ name, date, notes }).select().single();
   await supabase.from('setlists').insert({ gig_id: gig.id });
   loadGigs();
@@ -71,11 +72,11 @@ document.getElementById('add-gig-btn').onclick = async () => {
 
 async function loadGigs(){
   const { data } = await supabase.from('gigs').select('*').order('date');
-  const list = el('gigs-list'); list.innerHTML = '';
+  const list = el('gigs-list'); list.innerHTML='';
   data.forEach(g=>{
     const li = document.createElement('li');
     li.textContent = `${g.date} – ${g.name}`;
-    li.onclick = ()=> openGig(g);
+    li.onclick = e=>{ e.stopPropagation(); openGig(g); };
     list.appendChild(li);
   });
 }
@@ -93,11 +94,11 @@ async function loadSetlist(){
   if(!currentGig) return;
   const { data: setlist } = await supabase.from('setlists').select('id').eq('gig_id', currentGig.id).single();
   const { data } = await supabase.from('setlist_songs').select('position,songs(*)').eq('setlist_id', setlist.id).order('position');
-  const setlistEl = el('setlist'); setlistEl.innerHTML = '';
+  const setlistEl = el('setlist'); setlistEl.innerHTML='';
   data.forEach(row=>{
     const li = document.createElement('li');
-    li.draggable = true;
-    li.dataset.song = row.songs.id;
+    li.draggable=true;
+    li.dataset.song=row.songs.id;
     li.innerHTML = `${row.songs.name} (${row.songs.duration}) ${voteButtons(row.songs.id)}`;
     li.ondragstart = drag;
     setlistEl.appendChild(li);
@@ -110,29 +111,24 @@ async function addSongToSetlist(song_id){
   const { data: setlist } = await supabase.from('setlists').select('id').eq('gig_id', currentGig.id).single();
   const existing = await supabase.from('setlist_songs').select('*').eq('setlist_id', setlist.id).eq('song_id', song_id);
   if(existing.data.length>0) return;
-  const pos = document.querySelectorAll('#setlist li').length + 1;
+  const pos = document.querySelectorAll('#setlist li').length+1;
   await supabase.from('setlist_songs').insert({ setlist_id: setlist.id, song_id, position: pos });
   loadSetlist();
 }
 
 // ================= SONGS =================
-document.getElementById('add-song-btn').onclick = async ()=>{
-  const name = val('song-name');
-  const duration = val('song-duration');
-  const link = val('song-link');
-  if(!name || !duration) return alert('Songname & Dauer eingeben!');
-  // keine Duplikate in Library
+el('add-song-btn').onclick = async ()=>{
+  const name = val('song-name'); const duration = val('song-duration'); const link = val('song-link');
+  if(!name||!duration) return alert('Songname & Dauer eingeben!');
   const { data: exists } = await supabase.from('songs').select('*').eq('name', name).eq('duration', duration);
   if(exists.length>0) return alert('Song bereits vorhanden!');
   await supabase.from('songs').insert({ name, duration, link });
   el('song-name').value=''; el('song-duration').value=''; el('song-link').value='';
-  openLibrary();
+  loadLibrary();
 };
 
 // ================= SONG-BIBLIOTHEK =================
-document.getElementById('open-library-btn')?.addEventListener('click', openLibrary);
-
-async function openLibrary(){
+async function loadLibrary(){
   const { data } = await supabase.from('songs').select('*');
   renderLibrary(data);
 }
@@ -142,14 +138,11 @@ function renderLibrary(songs){
   const search = el('song-search')?.value.toLowerCase() || '';
   songs.filter(s=>s.name.toLowerCase().includes(search)).forEach(song=>{
     const li = document.createElement('li');
-    li.innerHTML = `
-      ${song.name} (${song.duration}) 
-      <button onclick="assignSong(${song.id})">🎵 Zu Setlists</button>
-    `;
+    li.innerHTML = `${song.name} (${song.duration}) <button onclick="assignSong(${song.id})">🎵 Zu Setlists</button>`;
     list.appendChild(li);
   });
 }
-el('song-search')?.addEventListener('input', openLibrary);
+el('song-search')?.addEventListener('input', loadLibrary);
 
 window.assignSong = async (song_id)=>{
   const { data: gigs } = await supabase.from('gigs').select('*').order('date');
@@ -157,14 +150,11 @@ window.assignSong = async (song_id)=>{
   const div = document.createElement('div');
   div.style.position='fixed'; div.style.top='20%'; div.style.left='50%'; div.style.transform='translateX(-50%)';
   div.style.background='#2c3e50'; div.style.padding='15px'; div.style.borderRadius='12px'; div.style.zIndex='999';
-  div.innerHTML = `
-    <h3>Song zu Setlists zuordnen</h3>
-    <select id="assign-gig" multiple>${gigOptions}</select>
-    <br><button id="assign-ok">OK</button>
-    <button onclick="document.body.removeChild(this.parentNode)">Abbrechen</button>
-  `;
+  div.innerHTML = `<h3>Song zu Setlists zuordnen</h3><select id="assign-gig" multiple>${gigOptions}</select><br>
+    <button id="assign-ok">OK</button>
+    <button onclick="document.body.removeChild(this.parentNode)">Abbrechen</button>`;
   document.body.appendChild(div);
-  document.getElementById('assign-ok').onclick = async ()=>{
+  el('assign-ok').onclick = async ()=>{
     const selected = Array.from(el('assign-gig').selectedOptions).map(o=>o.value);
     for(let gig_id of selected){
       const { data: setlist } = await supabase.from('setlists').select('id').eq('gig_id', gig_id).single();
@@ -192,9 +182,9 @@ window.vote = async (song_id,value)=>{
 };
 
 // ================= DRAG & DROP =================
-window.allowDrop = e => e.preventDefault();
-window.drag = e => e.dataTransfer.setData("song", e.target.dataset.song);
-window.drop = e => { e.preventDefault(); const song = e.dataTransfer.getData("song"); addSongToSetlist(song); };
+window.allowDrop = e=>e.preventDefault();
+window.drag = e=>e.dataTransfer.setData("song", e.target.dataset.song);
+window.drop = e=>{ e.preventDefault(); addSongToSetlist(e.dataTransfer.getData("song")); };
 
 // ================= TOTAL TIME =================
 function updateTotalTime(){
@@ -212,7 +202,6 @@ el('cash-btn').onclick = async ()=>{
   await supabase.from('cash').upsert({ id:1, amount }, { onConflict:['id'] });
   loadCash();
 };
-
 async function loadCash(){
   const { data } = await supabase.from('cash').select('*').single();
   el('current-cash').innerText = data ? data.amount.toFixed(2)+' €' : '0.00 €';
@@ -225,21 +214,15 @@ el('upload-techrider-btn').onclick = async ()=>{
   const { data, error } = await supabase.storage.from('techriders').upload(`band/${file.name}`, file, { upsert:true });
   if(error) return alert(error.message);
   const url = supabase.storage.from('techriders').getPublicUrl(`band/${file.name}`).data.publicUrl;
-  const link = el('techrider-link');
-  link.href = url; link.classList.remove('hidden');
+  const link = el('techrider-link'); link.href=url; link.classList.remove('hidden');
 };
 
 // ================= MERCH =================
 const merchItems = [
-  { key:'schwarz-s', label:'Schwarz S' }, { key:'schwarz-m', label:'Schwarz M' },
-  { key:'schwarz-l', label:'Schwarz L' }, { key:'schwarz-xl', label:'Schwarz XL' },
-  { key:'schwarz-xxl', label:'Schwarz XXL' }, { key:'weiß-s', label:'Weiß S' },
-  { key:'weiß-m', label:'Weiß M' }, { key:'weiß-l', label:'Weiß L' },
-  { key:'weiß-xl', label:'Weiß XL' }, { key:'weiß-xxl', label:'Weiß XXL' },
-  { key:'blau-s', label:'Blau S' }, { key:'blau-m', label:'Blau M' },
-  { key:'blau-l', label:'Blau L' }, { key:'blau-xl', label:'Blau XL' },
-  { key:'blau-xxl', label:'Blau XXL' }, { key:'anhänger', label:'Anhänger' },
-  { key:'öffner', label:'Öffner' }
+  { key:'schwarz-s', label:'Schwarz S' }, { key:'schwarz-m', label:'Schwarz M' }, { key:'schwarz-l', label:'Schwarz L' }, { key:'schwarz-xl', label:'Schwarz XL' }, { key:'schwarz-xxl', label:'Schwarz XXL' },
+  { key:'weiß-s', label:'Weiß S' }, { key:'weiß-m', label:'Weiß M' }, { key:'weiß-l', label:'Weiß L' }, { key:'weiß-xl', label:'Weiß XL' }, { key:'weiß-xxl', label:'Weiß XXL' },
+  { key:'blau-s', label:'Blau S' }, { key:'blau-m', label:'Blau M' }, { key:'blau-l', label:'Blau L' }, { key:'blau-xl', label:'Blau XL' }, { key:'blau-xxl', label:'Blau XXL' },
+  { key:'anhänger', label:'Anhänger' }, { key:'öffner', label:'Öffner' }
 ];
 
 async function renderMerch(){
@@ -266,7 +249,7 @@ async function updateMerch(itemKey){
 // ================= LOAD ALL =================
 async function loadAll(){
   await loadGigs();
+  await loadLibrary();
   await loadCash();
   await renderMerch();
 }
-
