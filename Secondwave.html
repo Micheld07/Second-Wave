@@ -9,9 +9,10 @@
 * { box-sizing:border-box; margin:0; padding:0; }
 body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; background:#121212; color:#eee; line-height:1.5; padding:15px; }
 h1 { text-align:center; color:#fff; margin-bottom:20px; font-size:1.8em; }
-h2 { cursor:pointer; padding:10px; background:#1f1f1f; border-radius:10px; margin-bottom:5px; }
+h2 { cursor:pointer; padding:10px; background:#1f1f1f; border-radius:10px; margin-bottom:5px; user-select:none; }
 section { background:#1b1b1b; margin-bottom:15px; border-radius:12px; overflow:hidden; transition:max-height 0.3s ease; }
 section.collapsed .content { display:none; }
+.content { padding:10px; }
 .input-group { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:15px; }
 input, select, textarea, button { padding:10px; border-radius:8px; font-size:16px; flex:1; min-width:120px; border:none; }
 input, textarea, select { background:#2a2a2a; color:#eee; }
@@ -21,20 +22,22 @@ ul { list-style:none; padding:0; margin:0; }
 li { background:#2a2a2a; margin:8px 0; padding:10px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
 .hidden { display:none !important; }
 #song-library { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#1f1f1f; padding:20px; border-radius:12px; box-shadow:0 0 15px #000; max-height:80%; overflow:auto; z-index:100; width:90%; max-width:500px; }
-#assign-overlay { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#1f1f1f; padding:20px; border-radius:12px; box-shadow:0 0 15px #000; z-index:100; }
 .modal-bg { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:90; display:flex; align-items:center; justify-content:center; }
-.vote-btn { width:35px; height:35px; border-radius:50%; border:none; color:#000; font-weight:bold; margin:0 2px; cursor:pointer; }
-.vote-btn.red { background:#ff4d4d; } 
-.vote-btn.orange { background:#ff944d; }
-.vote-btn.yellow { background:#ffdb4d; }
-.vote-btn.lightgreen { background:#94ff4d; }
-.vote-btn.green { background:#4dff88; }
+/* ================== HEADER ================== */
+#header-bar { display:flex; justify-content:flex-end; margin-bottom:10px; }
+#logout-btn { max-width:150px; }
+/* ================== MEDIA ================== */
 @media(max-width:600px){ .input-group{flex-direction:column;} li{flex-direction:column; text-align:center;} }
 </style>
 </head>
 <body>
 
 <h1>Second Wave 🎸</h1>
+
+<!-- HEADER -->
+<div id="header-bar" class="hidden">
+  <button id="logout-btn">Abmelden</button>
+</div>
 
 <!-- LOGIN MODAL -->
 <div id="login-modal" class="modal-bg">
@@ -78,38 +81,8 @@ li { background:#2a2a2a; margin:8px 0; padding:10px; border-radius:10px; display
     <input id="song-link" placeholder="YouTube-Link">
     <button id="add-song-btn">➕ Vorschlagen</button>
   </div>
-  <button id="open-library-btn">📚 Song-Bibliothek öffnen</button>
+  <input id="song-search" placeholder="🔍 Song suchen" style="margin-bottom:10px; width:100%; padding:8px; border-radius:6px; background:#2a2a2a; color:#eee; border:none;">
   <ul id="songs-list"></ul>
-</div>
-</section>
-
-<!-- ================== TECH-RIDER ================== -->
-<section id="techrider-section" class="collapsed">
-<h2>🎛️ Tech-Rider</h2>
-<div class="content">
-  <input type="file" id="techrider-file" accept=".pdf">
-  <button id="upload-techrider-btn">Upload PDF</button>
-  <p><a id="techrider-link" href="#" target="_blank" class="hidden">📄 Gespeicherten Tech-Rider öffnen</a></p>
-</div>
-</section>
-
-<!-- ================== BANDKASSE ================== -->
-<section id="cash-section" class="collapsed">
-<h2>💰 Bandkasse</h2>
-<div class="content">
-  <div class="input-group">
-    <input id="cash-amount" type="number" step="0.01" placeholder="Neuer Betrag (€)">
-    <button id="cash-btn">Aktualisieren</button>
-  </div>
-  <p>Aktuell: <span id="current-cash">0.00 €</span></p>
-</div>
-</section>
-
-<!-- ================== MERCH ================== -->
-<section id="merch-section" class="collapsed">
-<h2>👕 Merch Lager</h2>
-<div class="content">
-  <div class="merch-grid" id="merch-grid"></div>
 </div>
 </section>
 
@@ -119,28 +92,25 @@ li { background:#2a2a2a; margin:8px 0; padding:10px; border-radius:10px; display
 <div id="song-library" class="hidden">
   <h3>Song-Bibliothek</h3>
   <ul id="library-list"></ul>
-  <button onclick="closeLibrary()">Schließen</button>
+  <button onclick="document.getElementById('song-library').classList.add('hidden')">Schließen</button>
 </div>
 
-<!-- ================== OVERLAY FÜR SONG-ZUORDNUNG ================== -->
-<div id="assign-overlay" class="hidden"></div>
-
 <script type="module">
-// ================== SUPABASE ==================
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 const supabaseUrl='https://ugwkwxhqbkptuzexutve.supabase.co';
 const supabaseKey='sb_publishable_gyeVcsXZrq0yz3IS1C79QQ_H0K0g-9a';
 const supabase=createClient(supabaseUrl,supabaseKey);
 
-// ================== GLOBAL ==================
 let currentUser=null;
-let currentGig=null;
 
-// ================== AUTH ==================
+// ELEMENTS
 const authStatus=document.getElementById('auth-status');
 const loginModal=document.getElementById('login-modal');
 const mainContent=document.getElementById('main-content');
+const headerBar=document.getElementById('header-bar');
+const logoutBtn=document.getElementById('logout-btn');
 
+// LOGIN / LOGOUT
 window.signup=async function(){
   const email=document.getElementById('email').value;
   const password=document.getElementById('password').value;
@@ -154,20 +124,30 @@ window.login=async function(){
   if(error){ authStatus.innerText=error.message; return; }
   setUser(data.user);
 };
+window.logout=async function(){
+  await supabase.auth.signOut();
+  currentUser=null;
+  mainContent.classList.add('hidden');
+  headerBar.classList.add('hidden');
+  loginModal.style.display='flex';
+};
 function setUser(user){
   currentUser=user;
   loginModal.style.display='none';
   mainContent.classList.remove('hidden');
+  headerBar.classList.remove('hidden');
   loadAll();
 }
+logoutBtn.onclick=window.logout;
+
 supabase.auth.onAuthStateChange((_, session)=>{ if(session?.user) setUser(session.user); });
 
-// ================== TOGGLE SECTIONS ==================
+// COLLAPSIBLE
 document.querySelectorAll('section h2').forEach(h2=>{
   h2.onclick=()=>h2.parentElement.classList.toggle('collapsed');
 });
 
-// ================== SONGS ==================
+// SONGS
 document.getElementById('add-song-btn').onclick=async()=>{
   const name=document.getElementById('song-name').value;
   const duration=document.getElementById('song-duration').value;
@@ -180,8 +160,13 @@ document.getElementById('add-song-btn').onclick=async()=>{
   openLibrary();
 };
 
-// ================== SONG LIBRARY ==================
-document.getElementById('open-library-btn').onclick=openLibrary;
+// SONG LIBRARY
+const songSearch=document.getElementById('song-search');
+songSearch.oninput=async()=>{
+  const val=songSearch.value.toLowerCase();
+  const {data}=await supabase.from('songs').select('*');
+  renderLibrary(data.filter(s=>s.name.toLowerCase().includes(val)));
+};
 function closeLibrary(){document.getElementById('song-library').classList.add('hidden');}
 async function openLibrary(){
   document.getElementById('song-library').classList.remove('hidden');
@@ -193,36 +178,15 @@ function renderLibrary(songs){
   libraryList.innerHTML='';
   songs.forEach(song=>{
     const li=document.createElement('li');
-    li.innerHTML=`<a href="${song.link}" target="_blank">${song.name} (${song.duration})</a> 
-      <button onclick="assignSong(${song.id})">🎵 Zu Setlist</button>`;
+    li.innerHTML=`<a href="${song.link}" target="_blank">${song.name} (${song.duration})</a>`;
     libraryList.appendChild(li);
   });
 }
-window.assignSong=async(song_id)=>{
-  const overlay=document.getElementById('assign-overlay');
-  overlay.classList.remove('hidden');
-  overlay.innerHTML='<h3>Song zu Setlist zuordnen</h3>';
-  const {data:gigs}=await supabase.from('gigs').select('*').order('date');
-  overlay.innerHTML+=`<select id="assign-gig" multiple>${gigs.map(g=>`<option value="${g.id}">${g.name} (${g.date})</option>`).join('')}</select>`;
-  overlay.innerHTML+=`<button id="assign-ok">OK</button> <button onclick="document.getElementById('assign-overlay').classList.add('hidden')">Abbrechen</button>`;
-  document.getElementById('assign-ok').onclick=async()=>{
-    const selected=Array.from(document.getElementById('assign-gig').selectedOptions).map(o=>o.value);
-    for(let gig_id of selected){
-      const {data:setlist}=await supabase.from('setlists').select('id').eq('gig_id',gig_id).single();
-      const {data:exists}=await supabase.from('setlist_songs').select('*').eq('setlist_id',setlist.id).eq('song_id',song_id);
-      if(exists.length===0){
-        const pos=await supabase.from('setlist_songs').select('*').eq('setlist_id',setlist.id).then(r=>r.data.length+1);
-        await supabase.from('setlist_songs').insert({setlist_id:setlist.id,song_id,position:pos});
-      }
-    }
-    overlay.classList.add('hidden');
-    alert('Song zugewiesen!');
-  };
-};
 
-// ================== LOAD ALL ==================
+// LOAD ALL
 async function loadAll(){ openLibrary(); }
-</script>
 
+</script>
 </body>
 </html>
+
