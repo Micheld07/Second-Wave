@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Second Wave 🎸</title>
+<style>
+  /* =================== DARKMODE / BASIC =================== */
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;margin:0;padding:15px;background:#1b1b1b;color:#eee;line-height:1.5;}
+  h1,h2,h3,h4{margin:0;padding:0;}
+  h1{text-align:center;color:#fff;margin-bottom:20px;font-size:1.8em;}
+  h2{color:#fff;background:rgba(0,0,0,0.3);padding:15px;margin:0 0 15px 0;border-radius:12px;font-size:1.3em;cursor:pointer;}
+  section{background:#2b2b2b;margin:15px 0;padding:20px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.2);}
+  .input-group{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:15px;}
+  input,select,textarea,button{padding:12px 16px;border-radius:8px;font-size:16px;flex:1;min-width:120px;border:none;}
+  input,textarea,select{background:#3b3b3b;color:#eee;}
+  button{background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-weight:bold;cursor:pointer;transition:all 0.3s;}
+  button:hover{transform:scale(0.98);box-shadow:0 4px 12px rgba(0,123,255,0.4);}
+  ul{list-style:none;padding:0;margin:0;}
+  li{background:#3b3b3b;margin:10px 0;padding:15px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;}
+  .hidden{display:none !important;}
+  .gig-detail{margin-top:15px;padding:15px;border:1px solid #555;border-radius:12px;}
+  .setlist{min-height:50px;border:1px dashed #555;padding:10px;border-radius:8px;}
+  .song-library{margin-top:10px;border:1px solid #555;padding:10px;border-radius:8px;}
+  .merch-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
+  .merch-item{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px;background:#3b3b3b;border-radius:8px;}
+  a{color:#4da6ff;text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  @media(max-width:600px){.input-group{flex-direction:column;}li{flex-direction:column;text-align:center;}}
+</style>
+</head>
+<body>
+
+<h1>Second Wave 🎸</h1>
+
+<!-- LOGIN -->
+<section id="auth-section">
+  <h2>🔑 Login / Registrierung</h2>
+  <div class="input-group">
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Passwort">
+    <button onclick="login()">Login</button>
+    <button onclick="signup()">Registrieren</button>
+  </div>
+  <p id="auth-status"></p>
+</section>
+
+<!-- MAIN CONTENT -->
+<div id="main-content" class="hidden">
+
+  <!-- Gigs -->
+  <section>
+    <h2>📅 Auftritte & Proben</h2>
+    <div class="input-group">
+      <input id="gig-name" placeholder="Name">
+      <input id="gig-date" type="date">
+      <textarea id="gig-notes" placeholder="Notizen"></textarea>
+      <button id="add-gig-btn">➕ Hinzufügen</button>
+    </div>
+    <ul id="gigs-list"></ul>
+  </section>
+
+  <!-- Gig Details / Setlist & Songs -->
+  <section id="gig-detail-section" class="hidden">
+    <h2 id="gig-title"></h2>
+    <p id="gig-notes-view"></p>
+
+    <!-- SONGS -->
+    <div class="input-group">
+      <input id="song-name" placeholder="Songname">
+      <input id="song-duration" placeholder="mm:ss">
+      <input id="song-link" placeholder="Link (optional)">
+      <button id="add-song-btn">➕ Vorschlagen</button>
+    </div>
+
+    <div class="song-library hidden" id="song-library">
+      <h3>🎵 Song-Bibliothek</h3>
+      <ul id="library-list"></ul>
+    </div>
+
+    <h3>🎶 Setlist</h3>
+    <ul id="setlist" class="setlist" ondragover="allowDrop(event)" ondrop="drop(event)"></ul>
+    <p>Gesamtdauer: <span id="total-time">00:00</span></p>
+  </section>
+
+  <!-- Bandkasse -->
+  <section>
+    <h2>💰 Bandkasse</h2>
+    <div class="input-group">
+      <input id="cash-amount" type="number" step="0.01" placeholder="Neuer Betrag (€)">
+      <button id="cash-btn">Aktualisieren</button>
+    </div>
+    <p>Aktuell: <span id="current-cash">0.00 €</span></p>
+  </section>
+
+  <!-- Tech-Rider -->
+  <section>
+    <h2>🎛️ Tech-Rider</h2>
+    <div class="input-group">
+      <input type="file" id="techrider-file" accept=".pdf">
+      <button id="upload-techrider-btn">Upload PDF</button>
+    </div>
+    <p><a id="techrider-link" href="#" target="_blank" class="hidden">📄 Gespeicherten Tech-Rider öffnen</a></p>
+  </section>
+
+  <!-- Merch -->
+  <section>
+    <h2>👕 Merch Lager</h2>
+    <div class="merch-grid" id="merch-grid"></div>
+  </section>
+
+</div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+const supabaseUrl = 'https://ugwkwxhqbkptuzexutve.supabase.co';
+const supabaseKey = 'sb_publishable_gyeVcsXZrq0yz3IS1C79QQ_H0K0g-9a';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// ===== GLOBALS =====
+let currentUser=null;
+let currentGig=null;
+
+// ===== HELPERS =====
+function val(id){return document.getElementById(id).value;}
+function allowDrop(ev){ev.preventDefault();}
+function drag(ev){ev.dataTransfer.setData("song",ev.target.dataset.song);}
+function drop(ev){ev.preventDefault();const song=ev.dataTransfer.getData("song");addSongToSetlist(song);}
+
+// ===== AUTH =====
+window.signup=async()=>{
+  const {email,password}=val('email') && val('password') && {email:val('email'),password:val('password')};
+  const {error}=await supabase.auth.signUp({email,password});
+  document.getElementById('auth-status').innerText=error?error.message:'Registrierung erfolgreich – E-Mail bestätigen!';
+};
+window.login=async()=>{
+  const email=val('email'), password=val('password');
+  const {data,error}=await supabase.auth.signInWithPassword({email,password});
+  if(error){document.getElementById('auth-status').innerText=error.message;return;}
+  setUser(data.user);
+};
+window.setUser=user=>{
+  currentUser=user;
+  document.getElementById('auth-section').classList.add('hidden');
+  document.getElementById('main-content').classList.remove('hidden');
+  document.getElementById('auth-status').innerText=`Eingeloggt als ${user.email}`;
+  loadAll();
+};
+supabase.auth.onAuthStateChange((_,session)=>{if(session?.user)setUser(session.user);});
+
+// ===== GIGS =====
+document.getElementById('add-gig-btn').onclick=async()=>{
+  const name=val('gig-name'),date=val('gig-date'),notes=val('gig-notes');
+  if(!name||!date)return alert('Name & Datum eingeben!');
+  const {data:gig}=await supabase.from('gigs').insert({name,date,notes}).select().single();
+  await supabase.from('setlists').insert({gig_id:gig.id}); 
+  loadGigs();
+};
+async function loadGigs(){
+  const {data}=await supabase.from('gigs').select('*').order('date');
+  const list=document.getElementById('gigs-list'); list.innerHTML='';
+  data.forEach(g=>{
+    const li=document.createElement('li'); li.textContent=`${g.date} – ${g.name}`;
+    li.onclick=()=>openGig(g); list.appendChild(li);
+  });
+}
+async function openGig(g){
+  currentGig=g;
+  document.getElementById('gig-detail-section').classList.remove('hidden');
+  document.getElementById('gig-title').textContent=`${g.name} (${g.date})`;
+  document.getElementById('gig-notes-view').textContent=g.notes||'';
+  loadSetlist(); loadLibrary();
+}
+
+// ===== SETLIST =====
+async function loadSetlist(){
+  if(!currentGig)return;
+  const {data:setlist}=await supabase.from('setlists').select('id').eq('gig_id',currentGig.id).single();
+  const {data}=await supabase.from('setlist_songs').select('position,songs(*)').eq('setlist_id',setlist.id).order('position');
+  const setlistEl=document.getElementById('setlist'); setlistEl.innerHTML='';
+  data.forEach(row=>{
+    const li=document.createElement('li'); li.draggable=true; li.dataset.song=row.songs.id;
+    li.innerHTML=`${row.songs.name} (${row.songs.duration}) ${voteButtons(row.songs.id)}`;
+    li.ondragstart=drag;
+    setlistEl.appendChild(li);
+  });
+  updateTotalTime();
+}
+async function addSongToSetlist(song_id){
+  if(!currentGig)return;
+  const {data:setlist}=await supabase.from('setlists').select('id').eq('gig_id',currentGig.id).single();
+  const existing=await supabase.from('setlist_songs').select('*').eq('setlist_id',setlist.id).eq('song_id',song_id);
+  if(existing.data.length>0)return;
+  const pos=document.querySelectorAll('#setlist li').length+1;
+  await supabase.from('setlist_songs').insert({setlist_id:setlist.id,song_id,position:pos});
+  loadSetlist();
+}
+function updateTotalTime(){
+  let sec=0; document.querySelectorAll('#setlist li').forEach(li=>{
+    const m=li.textContent.match(/(\d+):(\d+)/); if(m)sec+=+m[1]*60+ +m[2];
+  });
+  document.getElementById('total-time').textContent=`${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`;
+}
+
+// ===== SONGS / LIBRARY =====
+document.getElementById('add-song-btn').onclick=async()=>{
+  const name=val('song-name'),duration=val('song-duration'),link=val('song-link');
+  if(!name||!duration)return alert('Name & Dauer eingeben!');
+  await supabase.from('songs').insert({name,duration,link});
+  document.getElementById('song-name').value=''; document.getElementById('song-duration').value=''; document.getElementById('song-link').value='';
+  loadLibrary();
+};
+async function loadLibrary(){
+  const {data}=await supabase.from('songs').select('*');
+  renderLibrary(data);
+}
+function renderLibrary(songs){
+  const library=document.getElementById('library-list'); library.innerHTML='';
+  songs.forEach(song=>{
+    const li=document.createElement('li');
+    li.innerHTML=`${song.name} (${song.duration}) <button onclick="addSongToSetlist(${song.id})">➕ Setlist</button>`;
+    library.appendChild(li);
+  });
+}
+
+// ===== VOTING =====
+function voteButtons(song_id){
+  const colors=['#ff4d4d','#ff944d','#ffdb4d','#94ff4d','#4dff88'];
+  return [1,2,3,4,5].map((v,i)=>`<button style="background:${colors[i]};margin-left:2px;" onclick="vote(${song_id},${v})">${v}</button>`).join(' ');
+}
+window.vote=async(song_id,value)=>{
+  if(!currentGig)return alert('Bitte zuerst einen Gig auswählen!');
+  await supabase.from('votes').insert({gig_id:currentGig.id,song_id,value});
+  loadSetlist();
+}
+
+// ===== BANDKASSE =====
+document.getElementById('cash-btn').onclick=async()=>{
+  const amount=parseFloat(val('cash-amount'))||0;
+  await supabase.from('cash').upsert({id:1,amount},{onConflict:['id']});
+  loadCash();
+};
+async function loadCash(){
+  const {data}=await supabase.from('cash').select('*').single();
+  document.getElementById('current-cash').innerText=data?data.amount.toFixed(2)+' €':'0.00 €';
+}
+
+// ===== TECH-RIDER =====
+document.getElementById('upload-techrider-btn').onclick=async()=>{
+  const file=document.getElementById('techrider-file').files[0];
+  if(!file)return alert('Datei auswählen');
+  const {data,error}=await supabase.storage.from('techriders').upload(`band/${file.name}`,file,{upsert:true});
+  if(error)return alert(error.message);
+  const url=supabase.storage.from('techriders').getPublicUrl(`band/${file.name}`).data.publicUrl;
+  const link=document.getElementById('techrider-link'); link.href=url; link.classList.remove('hidden');
+};
+
+// ===== MERCH =====
+const merchItems=[{key:'schwarz-s',label:'Schwarz S'},{key:'schwarz-m',label:'Schwarz M'},{key:'schwarz-l',label:'Schwarz L'},{key:'schwarz-xl',label:'Schwarz XL'},{key:'schwarz-xxl',label:'Schwarz XXL'},{key:'weiß-s',label:'Weiß S'},{key:'weiß-m',label:'Weiß M'},{key:'weiß-l',label:'Weiß L'},{key:'weiß-xl',label:'Weiß XL'},{key:'weiß-xxl',label:'Weiß XXL'},{key:'blau-s',label:'Blau S'},{key:'blau-m',label:'Blau M'},{key:'blau-l',label:'Blau L'},{key:'blau-xl',label:'Blau XL'},{key:'blau-xxl',label:'Blau XXL'},{key:'anhänger',label:'Anhänger'},{key:'öffner',label:'Öffner'}];
+async function renderMerch(){
+  const {data}=await supabase.from('merch').select('*');
+  const grid=document.getElementById('merch-grid'); grid.innerHTML='';
+  merchItems.forEach(item=>{
+    const dbEntry=data.find(d=>d.item===item.key); const qty=dbEntry?dbEntry.quantity:0;
+    const div=document.createElement('div'); div.className='merch-item';
+    div.innerHTML=`${item.label}: <input type="number" id="merch-${item.key}" min="0" value="${qty}"> <button>OK</button>`;
+    div.querySelector('button').onclick=()=>updateMerch(item.key); grid.appendChild(div);
+  });
+}
+async function updateMerch(itemKey){
+  const qty=parseInt(val(`merch-${itemKey}`),10)||0;
+  const {error}=await supabase.from('merch').upsert({item:itemKey,quantity:qty},{onConflict:['item']});
+  if(error){console.error(error);alert('Fehler beim Speichern');return;}
+  renderMerch();
+}
+
+// ===== LOAD ALL =====
+async function loadAll(){await loadGigs(); await loadCash(); await renderMerch();}
+</script>
+
+</body>
+</html>
